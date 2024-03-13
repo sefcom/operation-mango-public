@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mango_pipeline"
+version = "0.0.1"
+authors = [
+        {name = "Wil Gibbs", email = "wfgibbs@asu.edu"}, 
+    ]
+description = "A utility to facilitate parallelization across multiple target files for argument_resolver"
+requires-python=">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+
+dependencies = [
+    "argument_resolver",
+    "rich==13.7.1",
+    "docker==7.0.0",
+    "toml==0.10.2",
+    "kubernetes==29.0.0",
+    "esprima==4.0.1",
+    "phply==1.2.6",
+    "bs4==0.0.2",
+    "lxml==5.1.0",
+    "binwalk @ git+https://github.com/ReFirmLabs/binwalk@cddfede795971045d99422bd7a9676c8803ec5ee",
+    "pyyaml==6.0.1"
+]
+
+[project.scripts]
+mango-pipeline = "mango_pipeline.run:main"
+

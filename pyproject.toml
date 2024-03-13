@@ -1,0 +1,78 @@
+[build-system]
+requires = ["setuptools>=42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argument_resolver"
+version = "0.0.1"
+authors = [
+        {name = "Wil Gibbs", email = "wfgibbs@asu.edu"}, 
+        {name = "Pamplemousse", email = "private@example.com"},
+        {name = "Fish", email = "fishw@asu.edu"}
+    ]
+description = "An RDA based static-analysis library for resolving function arguments"
+readme="README.md"
+requires-python=">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11"
+]
+
+dependencies = [
+    "angr==9.2.94",
+    "pydot==2.0.0",
+    "networkx==3.2.1",
+    "psutil==5.9.8",
+    "ipdb==0.13.13",
+    "rich==13.7.1"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipdb",
+    "pytest",
+    "pytest-cov",
+    "mypy",
+    "flake8"
+]
+[project.scripts]
+mango = "argument_resolver.analysis.mango:main"
+env_resolve = "argument_resolver.analysis.env_resolve:main"
+
+[projects.package_data]
+argument_resolver = "py.typed"
+
+[flake8]
+max-line-length = 160
+
+[tool.setuptools.packages.find]
+where = ["package"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=argument_resolver --cov-fail-under 70"
+testpaths = [
+    "package/tests",
+]
+
+[tool.coverage.run]
+omit = [
+    "package/argument_resolver/__main__.py",
+    "package/argument_resolver/mango.py",
+]
+
+[tool.mypy]
+mypy_path = "package"
+check_untyped_defs = true
+disallow_any_generies = true
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+no_implicit_reexport = true
+
+

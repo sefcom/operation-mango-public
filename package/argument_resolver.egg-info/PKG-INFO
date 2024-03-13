@@ -1,0 +1,112 @@
+Metadata-Version: 2.1
+Name: argument_resolver
+Version: 0.0.1
+Summary: An RDA based static-analysis library for resolving function arguments
+Author-email: Wil Gibbs <wfgibbs@asu.edu>, Pamplemousse <private@example.com>, Fish <fishw@asu.edu>
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: angr==9.2.94
+Requires-Dist: pydot==2.0.0
+Requires-Dist: networkx==3.2.1
+Requires-Dist: psutil==5.9.8
+Requires-Dist: ipdb==0.13.13
+Requires-Dist: rich==13.7.1
+Provides-Extra: dev
+Requires-Dist: ipdb; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+
+# operation-mango
+
+## Fast vulnerability discovery by assumed execution
+
+Common vulnerability discovery techniques all follow a top-down scheme: They start from the entry point of the target program, reach as deep as possible, and examine all encountered program states against a set of security violations. These vulnerability discovery techniques are all limited by the complexity of programs, and are all prone to the path/state explosion problem.
+
+Alternatively, we can start from the location where vulnerabilities might occur (vulnerability sinks), trace back, and verify if the corresponding data flow may lead to a vulnerability. On top of this, we need “assumed execution”, which means when we are tracing back from a vulnerability sink to its sources, we do not faithfully execute or analyze every function on the path, instead we assume a data flow based on prior knowledge or some static analysis in advance and skip as many functions as possible during back tracing.
+
+You can find our paper here \[[PDF](TBD)\]!  
+Checkout our [experiment reproduction section](ExperimentReplication.md) to reproduce all the figures found in the paper.
+
+## Getting Started
+There are several ways to run operation mango if you so choose.
+
+### Docker
+Bypass all this non-sense and just use the container.
+> [!TIP]  
+> Don't forget to add volumes with -v for both the binary and result directory
+```
+docker run -it clasm/mango-user
+```
+
+### Local
+I highly recommend you create a separate python virtualenv for this method.
+```bash
+source venv/bin/activate
+git clone https://github.com/sefcom/operation-mango-public.git
+cd operation-mango-public
+pip install .
+```
+
+To build the docker container locally:
+```bash
+cd operation-mango-public
+docker build -f docker/Dockerfile . -t mango-user
+```
+
+## Using Operation Mango
+
+### mango
+`mango` is your default command for running our basic taint analysis on binaries.
+> [!TIP]
+> Using the `--concise` will significantly shrink the output size and speed up analysis.  
+> It will not print the entire analysis taint trace in your results, but normally you won't need that.
+```
+mango /path/to/bin --results your_res_dir
+```
+will run the basic command injection taint analysis, checkout the `--category` flag for more options
+
+### env_resolve
+
+## Parallelized Workloads
+
+If you have a large workload check out `mango_pipeline` [`Here`](pipeline/README.md).
+
+## Testing
+
+```bash
+# run all the tests for the developed features (isolated in the `package` module)
+(venv) pip install pytest-cov
+(venv) pytest
+```
+
+
+### Handcrafted binaries
+
+To ease testing, we crafted small binaries highlighting one (or several) case(s) we wanted to be able to handle properly.
+It was particularly helpful to drive the development of the [`Handlers`](package/argument_resolver/handlers/).
+
+They are located under the `package/tests/binaries/` folder.
+
+| Binary                                    | Description                                                                                                               |
+| ----------------------------------------  | ------------------------------------------------------------------------------------------------------------------------- |
+| `after_values/program`                    | Contains multiple calls to a sink in a single function.                                                                   |
+| `layered/program`                         | Nested calls running more than the default 7-depth limit before reaching the sink.                                        |
+| `looper/program`                          | Runs a loop before reaching a sink.                                                                                       |
+| `off_shoot/program`                       | Calls multiple functions that alter the input in sub functions before reaching the sink.                                  |
+| `recursive/program`                       | Contains direct and in-direct recursive calls (Highlights flaw of unresolvable call-depth).                               |
+| `nested/program`                          | Nested calls and returns before reaching a sink.                                                                          |
+| `simple/program`                          | Contains call to external function `puts`. Run through nested functions, leading to different sinks (`execve`, `system`). |
+| `sprintf_resolved_and_unresolved/program` | Contains two calls to `system`: one with constant data, the other one that could be influenced by the program user.       |
+
+
+To ensure reproducibility of testing, the binaries have been added to the repository.
+Although, if looking to add a new one, a `Makefile` has been written for convenience.
+```bash
+# build some homemade light binaries
+cd binaries/ && make && cd -
+```
