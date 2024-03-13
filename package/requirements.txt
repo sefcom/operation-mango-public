@@ -1,0 +1,7 @@
+angr==9.2.94
+ipdb
+nose2
+python-magic
+pydot
+claripy
+networkx

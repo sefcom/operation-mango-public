@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: mango_pipeline
+Version: 0.0.1
+Summary: A utility to facilitate parallelization across multiple target files for argument_resolver
+Author-email: Wil Gibbs <wfgibbs@asu.edu>
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.10
+Requires-Dist: argument_resolver
+Requires-Dist: rich==13.7.1
+Requires-Dist: docker==7.0.0
+Requires-Dist: toml==0.10.2
+Requires-Dist: kubernetes==29.0.0
+Requires-Dist: esprima==4.0.1
+Requires-Dist: phply==1.2.6
+Requires-Dist: bs4==0.0.2
+Requires-Dist: lxml==5.1.0
+Requires-Dist: binwalk@ git+https://github.com/ReFirmLabs/binwalk
+Requires-Dist: pyyaml==6.0.1

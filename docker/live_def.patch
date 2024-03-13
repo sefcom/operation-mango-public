@@ -1,0 +1,46 @@
+diff --git a/angr/knowledge_plugins/key_definitions/live_definitions.py b/angr/knowledge_plugins/key_definitions/live_definitions.py
+index 3db6532f2..2b17d28fe 100644
+--- a/angr/knowledge_plugins/key_definitions/live_definitions.py
++++ b/angr/knowledge_plugins/key_definitions/live_definitions.py
+@@ -160,7 +160,7 @@ class LiveDefinitions:
+             MultiValuedMemory(
+                 memory_id="mem",
+                 top_func=self.top,
+-                skip_missing_values_during_merging=False,
++                skip_missing_values_during_merging=True,
+                 page_kwargs={"mo_cmp": self._mo_cmp},
+             )
+             if memory is None
+@@ -516,9 +516,12 @@ class LiveDefinitions:
+         else:
+             definition: Definition = Definition(atom, code_loc, dummy=dummy, tags=tags)
+             d = MultiValues()
+-            for offset, vs in data.items():
+-                for v in vs:
+-                    d.add_value(offset, self.annotate_with_def(v, definition))
++            try:
++                for offset, vs in data.items():
++                    for v in vs:
++                        d.add_value(offset, self.annotate_with_def(v, definition))
++            except AttributeError:
++                pass
+ 
+         # set_object() replaces kill (not implemented) and add (add) in one step
+         if isinstance(atom, Register):
+diff --git a/angr/storage/memory_mixins/paged_memory/pages/mv_list_page.py b/angr/storage/memory_mixins/paged_memory/pages/mv_list_page.py
+index ec83c8d89..a63968337 100644
+--- a/angr/storage/memory_mixins/paged_memory/pages/mv_list_page.py
++++ b/angr/storage/memory_mixins/paged_memory/pages/mv_list_page.py
+@@ -203,7 +203,11 @@ class MVListPage(
+                 size = min(mo_length - (page_addr + b - mo_base), len(self.content) - b)
+                 merged_to = b + size
+ 
+-                merged_val = self._merge_values(to_merge, mo_length, memory=memory)
++                if memory.state.__class__.__name__ == 'LiveDefinitions':
++                    merged_val = self._merge_values(to_merge, mo_length, memory=memory,
++                                                    is_sp=b == memory.state.arch.sp_offset)
++                else:
++                    merged_val = self._merge_values(to_merge, mo_length, memory=memory)
+                 if merged_val is None:
+                     # merge_values() determines that we should not attempt to merge this value
+                     continue
