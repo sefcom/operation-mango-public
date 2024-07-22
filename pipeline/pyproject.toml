@@ -19,6 +19,7 @@ classifiers = [
 
 dependencies = [
     "argument_resolver",
+    "requests==2.31.0",
     "rich==13.7.1",
     "docker==7.0.0",
     "toml==0.10.2",
