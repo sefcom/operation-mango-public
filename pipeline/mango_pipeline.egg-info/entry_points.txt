@@ -1,2 +1,0 @@
-[console_scripts]
-mango-pipeline = mango_pipeline.run:main

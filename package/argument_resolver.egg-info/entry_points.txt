@@ -1,3 +1,0 @@
-[console_scripts]
-env_resolve = argument_resolver.analysis.env_resolve:main
-mango = argument_resolver.analysis.mango:main
