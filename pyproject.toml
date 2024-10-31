@@ -21,6 +21,7 @@ classifiers = [
 
 dependencies = [
     "angr==9.2.94",
+    "bitstring==4.1.4",
     "pydot==2.0.0",
     "networkx==3.2.1",
     "psutil==5.9.8",

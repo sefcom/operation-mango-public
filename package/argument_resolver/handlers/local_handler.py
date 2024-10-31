@@ -57,8 +57,6 @@ class LocalHandler(HandlerBase):
         Handles local functions during RDA
         :return: StateChange: bool, state, visited_blocks, dep_graph
         """
-        if self._rda.rda_timeout != 0 and self._rda.start_time is not None and (time.time() - self._rda.start_time) > self._rda.rda_timeout:
-            raise TimeoutError("RDA Timeout")
 
         if self.first_run:
             self.first_run = False
@@ -246,7 +244,6 @@ class LocalHandler(HandlerBase):
             subject=subject,
             function_handler=self,
             start_time=self._rda.start_time,
-            rda_timeout=self._rda.rda_timeout,
             visited_blocks=visited_blocks,
             dep_graph=dep_graph,
             prev_observed=self._rda.observed_results,

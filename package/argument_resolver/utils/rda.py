@@ -26,21 +26,18 @@ from argument_resolver.utils.utils import Utils
 
 
 class CustomRDA(ReachingDefinitionsAnalysis):
-    timeout_set = False
 
     def __init__(
         self,
         *args,
         is_reanalysis=False,
         start_time=None,
-        rda_timeout=None,
         prev_observed=None,
         **kwargs,
     ):
         self.prev_observed = prev_observed
         self.is_reanalysis = is_reanalysis
         self.start_time = start_time
-        self.rda_timeout = rda_timeout
         super().__init__(*args, **kwargs)
 
     def _run_on_node(self, node, state: ReachingDefinitionsState):
