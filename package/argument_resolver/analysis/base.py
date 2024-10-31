@@ -9,6 +9,8 @@ import sys
 import time
 import ipdb
 import inspect
+import concurrent.futures
+
 from multiprocessing import cpu_count
 from pathlib import Path
 from collections import Counter
@@ -87,7 +89,6 @@ class ScriptBase:
         enable_breakpoint=False,
         keyword_dict: str = None,
     ):
-        signal.signal(signal.SIGALRM, self.timeout_handler)
 
         self.bin_path = bin_path
         self.min_depth = min_depth if not forward_trace else max_depth
@@ -98,7 +99,6 @@ class ScriptBase:
         self.forward_trace = forward_trace
         self.trace_dict = {}
         self.sinks_found = {}
-        self.timeout_proc = None
         self.rda_task = None
         self.trace_task = None
         self.enable_breakpoint = enable_breakpoint
@@ -182,7 +182,6 @@ class ScriptBase:
     def breakpoint_handler(self, *args, **kwargs):
         if self.progress is not None:
             self.progress.stop()
-        self.cleanup_timeout_proc()
         frame = inspect.currentframe().f_back
         ipdb.set_trace(frame)
 
@@ -209,19 +208,22 @@ class ScriptBase:
         vra_task = self.progress.add_task("Running VRA", total=None)
         self.progress.start_task(vra_task)
         self.progress.start()
-        self.kill_parent_after_timeout(timeout=20 * 60)
-        try:
-            project.analyses.CompleteCallingConventions(
-                recover_variables=True, analyze_callsites=True, workers=workers
-            )
-        except TimeoutError:
-            # Failed to finish vra in time
-            self.log.critical("VRA TIMED OUT")
-            self.cleanup_timeout_proc()
-            exit(-1)
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(project.analyses.CompleteCallingConventions,
+                                    recover_variables=True,
+                                    analyze_callsites=True,
+                                    workers=workers
+                                    )
+            try:
+                future.result(timeout=20*60)
+            except concurrent.futures.TimeoutError:
+                future.cancel()
+                # Failed to finish vra in time
+                self.log.critical("VRA TIMED OUT")
+                exit(-1)
         self.vra_time = time.time() - start
         self.vra_start_time = 0
-        self.cleanup_timeout_proc()
         self.progress.update(vra_task, completed=1, total=1, visible=False)
         self.progress.remove_task(vra_task)
         Utils.arch = project.arch
@@ -418,7 +420,6 @@ class ScriptBase:
                 self.result_path.mkdir(parents=True, exist_ok=True)
                 shutil.move(temp_path, self.log_path)
         except Exception:
-            self.cleanup_timeout_proc()
             self.progress.stop()
             self.log.exception("OH NO MY MANGOES!!!")
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -578,34 +579,6 @@ class ScriptBase:
 
         return None
 
-    # create a function to spin up a subprocess that kills the parent after a certain amount of time
-    def kill_parent_after_timeout(self, timeout=None):
-        if self.rda_timeout == 0 or timeout == 0:
-            return
-        signal.alarm(self.rda_timeout)
-        p = subprocess.Popen(
-            f"sleep {timeout if timeout is not None else self.rda_timeout}; while true; do sleep 1 || kill -9 {os.getpid()}; kill -14 {os.getpid()} || break; done",
-            shell=True,
-        )
-        self.timeout_proc = p
-
-    def cleanup_timeout_proc(self):
-        signal.alarm(0)
-        self.alarm_triggered = False
-        if self.timeout_proc is not None:
-            parent = psutil.Process(self.timeout_proc.pid)
-            children = list(parent.children(recursive=True))
-            self.timeout_proc.kill()
-            self.timeout_proc.wait()
-            self.timeout_proc = None
-
-            # kill all children
-            for child in children:
-                try:
-                    child.send_signal(9)
-                except psutil.NoSuchProcess:
-                    pass
-
     def get_observation_points_from_trace(
         self, trace: CallTrace
     ) -> Set[Tuple[str, int, int]]:
@@ -692,25 +665,30 @@ class ScriptBase:
                 ),
             )
 
-            self.kill_parent_after_timeout()
             timed_out = False
             self.trace_task = self.progress.add_task(f"Tainting ...", total=None)
-            try:
-                self.RDA(
-                    subject=subject,
-                    function_handler=handler,
-                    observation_points=set(),
-                    init_context=(callsite.caller_func_addr,),
-                    start_time=time.time(),
-                    kb=self.project.kb,
-                    dep_graph=DepGraph(),
-                    rda_timeout=self.rda_timeout,
-                    max_iterations=2,
-                )
-            except TimeoutError:
-                timed_out = True
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(self.RDA,
+                                         subject=subject,
+                                         function_handler=handler,
+                                         observation_points=set(),
+                                         init_context=(callsite.caller_func_addr,),
+                                         start_time=time.time(),
+                                         kb=self.project.kb,
+                                         dep_graph=DepGraph(),
+                                         max_iterations=2,
+                                         )
 
-            self.cleanup_timeout_proc()
+                try:
+                    future.result(timeout=self.rda_timeout if self.rda_timeout > 0 else None)
+                except concurrent.futures.TimeoutError:
+                    timed_out = True
+                    future.cancel()
+                    self.log.critical("Timed out for trace %s", single_trace.callsites)
+                finally:
+                    executor.shutdown(wait=False)
+
+
             self.progress.update(self.trace_task, visible=False)
             self.progress.remove_task(self.trace_task)
 
@@ -857,16 +835,6 @@ class ScriptBase:
 
         return final_trace, white_list
 
-    def timeout_handler(self, signum, frame):
-        time_diff = time.time() - self.vra_start_time
-        if time.time() - self.vra_start_time < 20 * 60 or self.alarm_triggered:
-            self.cleanup_timeout_proc()
-            self.kill_parent_after_timeout((20 * 60) - time_diff)
-            return
-
-        self.alarm_triggered = True
-        raise TimeoutError("RDA Timeout")
-
     def run_analysis_on_trace(
         self,
         trace: CallTrace,
@@ -930,28 +898,27 @@ class ScriptBase:
 
         self.rda_task = self.progress.add_task(f"Analyzing ...", total=None)
 
-        self.kill_parent_after_timeout()
-        try:
-            rda = self.RDA(
-                subject=subject,
-                observation_points=all_callsites,
-                function_handler=handler,
-                kb=self.project.kb,
-                dep_graph=DepGraph(),
-                rda_timeout=self.rda_timeout,
-                start_time=time.time(),
-                init_state=init_state,
-                max_iterations=2,
-            )
-        except TimeoutError:
-            rda = None
-            self.log.critical(
-                "TIMEOUT FOR subject: %s, sink: %s",
-                subject.content.callsites,
-                sink.name,
-            )
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(self.RDA,
+                                    subject=subject,
+                                    observation_points=all_callsites,
+                                    function_handler=handler,
+                                    kb=self.project.kb,
+                                    dep_graph=DepGraph(),
+                                    start_time=time.time(),
+                                    init_state=init_state,
+                                    max_iterations=2,
+                                    )
 
-        self.cleanup_timeout_proc()
+            try:
+                rda = future.result(timeout=self.rda_timeout if self.rda_timeout > 0 else None)
+            except concurrent.futures.TimeoutError:
+                rda = None
+                future.cancel()
+                self.log.critical( "TIMEOUT FOR subject: %s, sink: %s", subject.content.callsites, sink.name)
+            finally:
+                executor.shutdown(wait=False)
+
         self.progress.update(self.rda_task, visible=False)
         self.progress.remove_task(self.rda_task)
 
@@ -1062,7 +1029,7 @@ def default_parser():
     path_group.add_argument(
         "--results",
         dest="result_path",
-        default=None,
+        default=Path("mango_results").resolve(),
         help="Where to store the results of the analysis.",
     )
 
