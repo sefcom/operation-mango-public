@@ -7,3 +7,4 @@ from .string import StringHandlers
 from .unistd import UnistdHandlers
 from .network import NetworkHandlers
 from .url_param import URLParamHandlers
+from .win32_api import Win32ApiHandlers

@@ -10,6 +10,7 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "recv",
     "recvfrom",
     "custom_param_parser",
+    "ReadConsoleA",
 } | {x.name for x in VULN_TYPES["getter"]}
 
 

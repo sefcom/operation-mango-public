@@ -42,6 +42,7 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
     Sink(name="SLIBCExecv", vulnerable_parameters=[1]),
     Sink(name="SLIBCPopen", vulnerable_parameters=[1]),
     Sink(name="pegaSystem", vulnerable_parameters=[1]),
+    Sink(name="CreateProcessA", vulnerable_parameters=[1, 2]), #[1,2]  # lpApplicationName, lpCommandLine
 ]
 
 PATH_TRAVERSAL_SINKS: List[Sink] = [
@@ -101,3 +102,11 @@ SETTER_SINKS: List[Sink] = [
 ]
 
 ENV_SINKS: List[Sink] = GETTER_SINKS + SETTER_SINKS
+
+#WIN32_PROCESS_SINKS: List[Sink] = [
+    # Sink(name="CreateProcessW", vulnerable_parameters=[1, 2]),
+    # Sink(name="WinExec", vulnerable_parameters=[1]),
+    # Sink(name="ShellExecuteA", vulnerable_parameters=[3, 4]),  # lpFile, lpParameters
+#]
+
+
