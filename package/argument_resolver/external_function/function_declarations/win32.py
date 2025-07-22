@@ -38,7 +38,9 @@ winreg_decls = {
     
     "ReadConsoleA": prototypes['ReadConsoleA'],
     "GetCommandLineA": prototypes['GetCommandLineA'],
-    "CreateFileW" : prototypes['CreateFileW'],
+    "CreateFileA" :SimTypeFunction([
+        SimTypePointer(SimTypeChar(label="byte"), offset=0),
+    ], SimTypeInt(signed=True))
 
     
 }

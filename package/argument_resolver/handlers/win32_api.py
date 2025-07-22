@@ -119,69 +119,43 @@ class Win32ApiHandlers(HandlerBase):
         arch = state.arch
         cc = self._calling_convention_resolver.get_cc("ReadConsoleA")
         
-        # Extract arguments
+        # Extract arguments (simplified 3-parameter version)
         arg_console = cc.get_next_arg()      # hConsoleInput
         arg_buffer = cc.get_next_arg()       # lpBuffer
         arg_chars_to_read = cc.get_next_arg() # nNumberOfCharsToRead
-        arg_chars_read = cc.get_next_arg()   # lpNumberOfCharsRead
-        arg_reserved = cc.get_next_arg()     # lpReserved
         
         # Get buffer pointer and size
         buffer_ptrs = Utils.get_values_from_cc_arg(arg_buffer, state, arch)
         chars_to_read = Utils.get_values_from_cc_arg(arg_chars_to_read, state, arch)
-        console_handle = Utils.get_values_from_cc_arg(arg_console, state, arch)
         
         # Determine read size
         size_val = Utils.get_concrete_value_from_int(chars_to_read)
         size_val = max(size_val) if size_val is not None else self.MAX_READ_SIZE
         size_val = min(size_val, self.MAX_READ_SIZE)
         
-        # Track console input source
-        console_name = "stdin"
-        parent_fds = []
-        parent = None
-        for handle_val in Utils.get_values_from_multivalues(console_handle):
-            if handle_val.concrete and handle_val.concrete_value in self.fd_tracker:
-                parent_fds.append(handle_val.concrete_value)
-                console_info = self.fd_tracker[handle_val.concrete_value]
-                if "val" in console_info:
-                    console_name = next(iter(x for x in console_info["val"].variables if x != "TOP"), "console")
-                    if parent is None:
-                        parent = console_info["val"]
-                    else:
-                        parent = parent.concat(console_info["val"])
-        
-        # Create tainted input data
+        # Create tainted input data (MATCH GetCommandLineA pattern)
         for buffer_ptr in Utils.get_values_from_multivalues(buffer_ptrs):
             if not state.is_top(buffer_ptr):
                 memloc = MemoryLocation(buffer_ptr, size_val, endness=Endness.LE)
                 
-                # Create symbolic input representing console data
+                # Use same naming pattern as GetCommandLineA
                 console_input = claripy.BVS(
-                    f"ReadConsoleA({console_name})@0x{stored_func.code_loc.ins_addr:x}",
+                    f"ReadConsoleA(console)@0x{stored_func.code_loc.ins_addr:x}",  # Simplified name
                     size_val * 8
                 )
                 console_input.variables = frozenset(set(console_input.variables) | {"TOP"})
                 
-                # ADD THIS: Track in fd_tracker like other input functions
+                # Track in fd_tracker (MATCH GetCommandLineA pattern)
                 if stored_func.name not in self.fd_tracker:
                     self.fd_tracker[stored_func.name] = []
                 
                 self.fd_tracker[stored_func.name].append({
-                    "val": console_input, 
-                    "parent": parent_fds, 
+                    "val": console_input,
+                    "parent": [],  # Simplified like GetCommandLineA
                     "ins_addr": stored_func.code_loc.ins_addr
                 })
                 
                 stored_func.depends(memloc, *stored_func.atoms, value=MultiValues(console_input))
-        
-        # Handle lpNumberOfCharsRead output parameter
-        chars_read_ptrs = Utils.get_values_from_cc_arg(arg_chars_read, state, arch)
-        for chars_read_ptr in Utils.get_values_from_multivalues(chars_read_ptrs):
-            if not state.is_top(chars_read_ptr):
-                memloc = MemoryLocation(chars_read_ptr, 4, endness=Endness.LE)
-                chars_read_val = MultiValues(claripy.BVV(size_val, 32))
-                stored_func.depends(memloc, *stored_func.atoms, value=chars_read_val)
         
         # Return success
         return_value = MultiValues(claripy.BVV(1, 32))
@@ -215,5 +189,43 @@ class Win32ApiHandlers(HandlerBase):
         
         # Return pointer to command line data
         return_value = MultiValues(cmdline_data)
+        return True, state, return_value
+
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_CreateFileA(self, state: "ReachingDefinitionsState", stored_func: StoredFunction):
+        """Handle CreateFileA Win32 API call"""
+        self.log.debug("RDA: CreateFileA(), ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("CreateFileA")
+        
+        # Extract arguments (simplified 3-parameter version)
+        arg_filename = cc.get_next_arg()      # lpFileName
+        arg_access = cc.get_next_arg()        # dwDesiredAccess
+        arg_share = cc.get_next_arg()         # dwShareMode
+        
+        # Get filename pointer
+        filename_ptrs = Utils.get_values_from_cc_arg(arg_filename, state, arch)
+        
+        # Create file handle representing opened file
+        file_handle = claripy.BVS(
+            f"CreateFileA(file)@0x{stored_func.code_loc.ins_addr:x}",
+            64  # 64-bit handle
+        )
+        file_handle.variables = frozenset(set(file_handle.variables) | {"TOP"})
+        
+        # Track in fd_tracker like other input functions
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": file_handle,
+            "parent": [],  # No parent for file handle
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+        
+        # Return file handle
+        return_value = MultiValues(file_handle)
         return True, state, return_value
 
