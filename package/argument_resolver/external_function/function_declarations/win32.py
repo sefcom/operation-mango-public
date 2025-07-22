@@ -34,29 +34,12 @@ winreg_decls = {
     # SimTypePointer(SimTypeBottom()), # lpStartupInfo
     # SimTypePointer(SimTypeBottom())  # lpProcessInformation
     ], SimTypeInt()),
+    # "CreateProcessA": prototypes['CreateProcessA'],
     
     "ReadConsoleA": prototypes['ReadConsoleA'],
+    "GetCommandLineA": prototypes['GetCommandLineA'],
+    "CreateFileW" : prototypes['CreateFileW'],
 
     
 }
 
-    #  "CreateProcessA": SimTypeFunction([
-    #     SimTypeLong(signed=True),  # lpApplicationName
-    #     SimTypeLong(signed=True),  # lpCommandLine
-    #     SimTypeLong(signed=True), # lpProcessAttributes
-    #     SimTypeLong(signed=True), # lpThreadAttributes
-    #     SimTypeLong(signed=True),                   # bInheritHandles
-    #     SimTypeLong(signed=True),                   # dwCreationFlags
-    #     SimTypeLong(signed=True), # lpEnvironment
-    #     SimTypeLong(signed=True),  # lpCurrentDirectory
-    #     SimTypeLong(signed=True), # lpStartupInfo
-    #     SimTypeLong(signed=True),  # lpProcessInformation
-    # ], SimTypeLong(signed=True),),
-    
-    # "ReadConsoleA": SimTypeFunction([
-    #     SimTypeLong(signed=True), # hConsoleInput
-    #     SimTypeLong(signed=True), # lpBuffer
-    #     SimTypeLong(signed=True),                   # nNumberOfCharsToRead
-    #     SimTypeLong(signed=True),   # lpNumberOfCharsRead
-    #     SimTypeLong(signed=True),  # lpReserved
-    # ], SimTypeLong(signed=True),)

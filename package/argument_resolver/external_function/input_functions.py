@@ -11,6 +11,7 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "recvfrom",
     "custom_param_parser",
     "ReadConsoleA",
+    "GetCommandLineA"
 } | {x.name for x in VULN_TYPES["getter"]}
 
 # In input_functions.py, add after line 14:

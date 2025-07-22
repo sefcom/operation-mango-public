@@ -186,3 +186,34 @@ class Win32ApiHandlers(HandlerBase):
         # Return success
         return_value = MultiValues(claripy.BVV(1, 32))
         return True, state, return_value
+
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetCommandLineA(self, state: "ReachingDefinitionsState", stored_func: StoredFunction):
+        """Handle GetCommandLineA Win32 API call"""
+        self.log.debug("RDA: GetCommandLineA(), ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        
+        # GetCommandLineA has no parameters - it returns a pointer to command line
+        # Create symbolic command line data
+        cmdline_data = claripy.BVS(
+            f"GetCommandLineA(cmdline)@0x{stored_func.code_loc.ins_addr:x}",
+            256 * 8  # 256 bytes for command line
+        )
+        cmdline_data.variables = frozenset(set(cmdline_data.variables) | {"TOP"})
+        
+        # Track in fd_tracker like other input functions
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": cmdline_data,
+            "parent": [],  # No parent for command line
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+        
+        # Return pointer to command line data
+        return_value = MultiValues(cmdline_data)
+        return True, state, return_value
+
