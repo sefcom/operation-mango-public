@@ -13,6 +13,9 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "ReadConsoleA",
 } | {x.name for x in VULN_TYPES["getter"]}
 
+# In input_functions.py, add after line 14:
+print(f"DEBUG: INPUT_EXTERNAL_FUNCTIONS = {INPUT_EXTERNAL_FUNCTIONS}")
+
 
 KEY_BEACONS = {
     "REQUEST_METHOD",

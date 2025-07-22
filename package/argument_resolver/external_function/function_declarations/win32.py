@@ -21,14 +21,14 @@ winreg_decls = {
        "CreateProcessA": SimTypeFunction([
         SimTypePointer(SimTypeChar()),  # lpApplicationName
         SimTypePointer(SimTypeChar()),  # lpCommandLine
-        SimTypePointer(SimTypeBottom()), # lpProcessAttributes
-        SimTypePointer(SimTypeBottom()), # lpThreadAttributes
-        SimTypeInt(),                   # bInheritHandles
-        SimTypeInt(),                   # dwCreationFlags
-        SimTypePointer(SimTypeBottom()), # lpEnvironment
-        SimTypePointer(SimTypeChar()),  # lpCurrentDirectory
-        SimTypePointer(SimTypeBottom()), # lpStartupInfo
-        SimTypePointer(SimTypeBottom())  # lpProcessInformation
+        # SimTypePointer(SimTypeBottom()), # lpProcessAttributes
+        # SimTypePointer(SimTypeBottom()), # lpThreadAttributes
+        # SimTypeInt(),                   # bInheritHandles
+        # SimTypeInt(),                   # dwCreationFlags
+        # SimTypePointer(SimTypeBottom()), # lpEnvironment
+        # SimTypePointer(SimTypeChar()),  # lpCurrentDirectory
+        # SimTypePointer(SimTypeBottom()), # lpStartupInfo
+        # SimTypePointer(SimTypeBottom())  # lpProcessInformation
     ], SimTypeInt()),
     
     "ReadConsoleA": SimTypeFunction([

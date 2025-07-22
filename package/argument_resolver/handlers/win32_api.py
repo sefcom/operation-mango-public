@@ -113,17 +113,7 @@ class Win32ApiHandlers(HandlerBase):
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_ReadConsoleA(self, state: "ReachingDefinitionsState", stored_func: StoredFunction):
-        """
-        Handle ReadConsoleA Win32 API call
-        
-        BOOL ReadConsoleA(
-            HANDLE  hConsoleInput,          // arg 0
-            LPVOID  lpBuffer,               // arg 1
-            DWORD   nNumberOfCharsToRead,   // arg 2
-            LPDWORD lpNumberOfCharsRead,    // arg 3
-            LPVOID  lpReserved              // arg 4
-        );
-        """
+        """Handle ReadConsoleA Win32 API call"""
         self.log.debug("RDA: ReadConsoleA(), ins_addr=%#x", stored_func.code_loc.ins_addr)
         
         arch = state.arch
@@ -148,11 +138,18 @@ class Win32ApiHandlers(HandlerBase):
         
         # Track console input source
         console_name = "stdin"
+        parent_fds = []
+        parent = None
         for handle_val in Utils.get_values_from_multivalues(console_handle):
             if handle_val.concrete and handle_val.concrete_value in self.fd_tracker:
+                parent_fds.append(handle_val.concrete_value)
                 console_info = self.fd_tracker[handle_val.concrete_value]
                 if "val" in console_info:
                     console_name = next(iter(x for x in console_info["val"].variables if x != "TOP"), "console")
+                    if parent is None:
+                        parent = console_info["val"]
+                    else:
+                        parent = parent.concat(console_info["val"])
         
         # Create tainted input data
         for buffer_ptr in Utils.get_values_from_multivalues(buffer_ptrs):
@@ -166,16 +163,26 @@ class Win32ApiHandlers(HandlerBase):
                 )
                 console_input.variables = frozenset(set(console_input.variables) | {"TOP"})
                 
+                # ADD THIS: Track in fd_tracker like other input functions
+                if stored_func.name not in self.fd_tracker:
+                    self.fd_tracker[stored_func.name] = []
+                
+                self.fd_tracker[stored_func.name].append({
+                    "val": console_input, 
+                    "parent": parent_fds, 
+                    "ins_addr": stored_func.code_loc.ins_addr
+                })
+                
                 stored_func.depends(memloc, *stored_func.atoms, value=MultiValues(console_input))
         
         # Handle lpNumberOfCharsRead output parameter
         chars_read_ptrs = Utils.get_values_from_cc_arg(arg_chars_read, state, arch)
         for chars_read_ptr in Utils.get_values_from_multivalues(chars_read_ptrs):
             if not state.is_top(chars_read_ptr):
-                memloc = MemoryLocation(chars_read_ptr, 4, endness=Endness.LE)  # DWORD = 4 bytes
+                memloc = MemoryLocation(chars_read_ptr, 4, endness=Endness.LE)
                 chars_read_val = MultiValues(claripy.BVV(size_val, 32))
                 stored_func.depends(memloc, *stored_func.atoms, value=chars_read_val)
         
         # Return success
-        return_value = MultiValues(claripy.BVV(1, 32))  # TRUE
+        return_value = MultiValues(claripy.BVV(1, 32))
         return True, state, return_value
