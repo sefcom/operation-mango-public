@@ -14,9 +14,9 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "GetCommandLineA"
 } | {x.name for x in VULN_TYPES["getter"]}
 
-# In input_functions.py, add after line 14:
-print(f"DEBUG: INPUT_EXTERNAL_FUNCTIONS = {INPUT_EXTERNAL_FUNCTIONS}")
-
+# This is sloppy but whatever
+win32_list = ["ReadConsoleA", "GetCommandLineA"]
+print(f"AVAILABLE_WIN32_API_SOURCE_FUNCTIONS:{win32_list} ")
 
 KEY_BEACONS = {
     "REQUEST_METHOD",
