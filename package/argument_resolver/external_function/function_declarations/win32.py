@@ -21,26 +21,40 @@ winreg_decls = {
     "RegCloseKey": SimTypeFunction(
         [SimTypeLong(signed=True)], SimTypeLong(signed=True)
     ),
+
+    "ReadConsoleA": SimTypeFunction(
+    [
+        SimTypeLong(signed=True),
+        SimTypePointer(SimTypeChar(), offset=0),
+        SimTypeInt(signed=False),
+        SimTypePointer(SimTypeInt(), offset=0),
+        SimTypeLong(signed=True),
+    ], SimTypeLong(signed=True)),
     
     "CreateProcessA": SimTypeFunction([
-    SimTypePointer(SimTypeChar()),  # lpApplicationName
-    SimTypePointer(SimTypeChar()),  # lpCommandLine
-    # SimTypePointer(SimTypeBottom()), # lpProcessAttributes
-    # SimTypePointer(SimTypeBottom()), # lpThreadAttributes
-    # SimTypeInt(),                   # bInheritHandles
-    # SimTypeInt(),                   # dwCreationFlags
-    # SimTypePointer(SimTypeBottom()), # lpEnvironment
-    # SimTypePointer(SimTypeChar()),  # lpCurrentDirectory
-    # SimTypePointer(SimTypeBottom()), # lpStartupInfo
-    # SimTypePointer(SimTypeBottom())  # lpProcessInformation
+        SimTypePointer(SimTypeChar()),      # lpApplicationName
+        SimTypePointer(SimTypeChar()),      # lpCommandLine
+        SimTypePointer(SimTypeBottom()),    # lpProcessAttributes
+        SimTypePointer(SimTypeBottom()),    # lpThreadAttributes
+        SimTypeInt(),                       # bInheritHandles
+        SimTypeInt(),                       # dwCreationFlags
+        SimTypePointer(SimTypeBottom()),    # lpEnvironment
+        SimTypePointer(SimTypeChar()),      # lpCurrentDirectory
+        SimTypePointer(SimTypeBottom()),    # lpStartupInfo
+        SimTypePointer(SimTypeBottom()),    # lpProcessInformation
     ], SimTypeInt()),
-    # "CreateProcessA": prototypes['CreateProcessA'],
-    
-    "ReadConsoleA": prototypes['ReadConsoleA'],
-    "GetCommandLineA": prototypes['GetCommandLineA'],
-    "CreateFileA" :SimTypeFunction([
-        SimTypePointer(SimTypeChar(label="byte"), offset=0),
-    ], SimTypeInt(signed=True))
+
+    "CreateFileA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpFileName
+        SimTypeInt(),                       # dwDesiredAccess
+        SimTypeInt(),                       # dwShareMode
+        SimTypePointer(SimTypeBottom()),    # lpSecurityAttributes
+        SimTypeInt(),                       # dwCreationDisposition
+        SimTypeInt(),                       # dwFlagsAndAttributes
+        SimTypePointer(SimTypeBottom()),    # hTemplateFile
+    ], SimTypePointer(SimTypeBottom())),   # Returns HANDLE
+
+    "GetCommandLineA": SimTypeFunction([], SimTypePointer(SimTypeChar())),
 
     
 }

@@ -51,7 +51,7 @@ from argument_resolver.handlers import (
     StringHandlers,
     UnistdHandlers,
     URLParamHandlers,
-    Win32ApiHandlers,
+    WinHandlers,
     handler_factory,
 )
 from argument_resolver.handlers.base import HandlerBase
@@ -128,7 +128,7 @@ class ScriptBase:
                 NVRAMHandlers,
                 NetworkHandlers,
                 URLParamHandlers,
-                Win32ApiHandlers,
+                WinHandlers,
             ]
         )
 

@@ -42,7 +42,7 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
     Sink(name="SLIBCExecv", vulnerable_parameters=[1]),
     Sink(name="SLIBCPopen", vulnerable_parameters=[1]),
     Sink(name="pegaSystem", vulnerable_parameters=[1]),
-    Sink(name="CreateProcessA", vulnerable_parameters=[1, 2]), #[1,2]  # lpApplicationName, lpCommandLine
+    Sink(name="CreateProcessA", vulnerable_parameters=[2]), #[1,2]  # lpApplicationName, lpCommandLine
     Sink(name="CreateFileA", vulnerable_parameters=[1]) # [1] lpFileName
 ]
 

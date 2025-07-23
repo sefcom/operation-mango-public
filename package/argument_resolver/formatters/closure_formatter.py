@@ -161,7 +161,7 @@ class ClosureFormatter:
                     if defn not in val_defns:
                         continue
                     new_mv.add_value(offset, val)
-            if atom not in stored_func.constant_data:
+            if atom not in stored_func.constant_data or stored_func.constant_data[atom] is None or all(x is None for x in stored_func.constant_data[atom]):
                 constant_data = None
             else:
                 constant_data = stored_func.constant_data[atom]

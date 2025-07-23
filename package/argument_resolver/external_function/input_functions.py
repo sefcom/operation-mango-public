@@ -11,12 +11,13 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "recvfrom",
     "custom_param_parser",
     "ReadConsoleA",
-    "GetCommandLineA"
+    "GetCommandLineA",
 } | {x.name for x in VULN_TYPES["getter"]}
 
 # This is sloppy but whatever
-win32_list = ["ReadConsoleA", "GetCommandLineA"]
-print(f"AVAILABLE_WIN32_API_SOURCE_FUNCTIONS:{win32_list} ")
+print(f"AVAILABLE_WIN32_API_SOURCE_FUNCTIONS:")
+for function in INPUT_EXTERNAL_FUNCTIONS - {"read", "fread", "fgets", "recv", "recvfrom", "custom_param_parser"}: 
+    print(function)
 
 KEY_BEACONS = {
     "REQUEST_METHOD",
