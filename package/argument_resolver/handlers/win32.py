@@ -251,6 +251,101 @@ class WinHandlers(HandlerBase):
         # Step 3f: Return success with symbolic return value
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
-    
         
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_VirtualAlloc(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle VirtualAlloc - Windows virtual memory allocation
+        .. sourcecode:: c
+            LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: VirtualAlloc, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("VirtualAlloc")
+        
+        # Extract parameters
+        address_arg = cc.get_next_arg()      # lpAddress
+        size_arg = cc.get_next_arg()         # dwSize
+        alloc_type_arg = cc.get_next_arg()   # flAllocationType
+        protect_arg = cc.get_next_arg()      # flProtect
+        
+        # Get parameter values
+        address_vals = Utils.get_values_from_cc_arg(address_arg, state, arch)
+        size_vals = Utils.get_values_from_cc_arg(size_arg, state, arch)
+        protect_vals = Utils.get_values_from_cc_arg(protect_arg, state, arch)
+        
+        # Create symbolic memory pointer for allocated memory
+        allocated_ptr = claripy.BVS(
+            f"{stored_func.name}(allocated_memory)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits  # Pointer size (64-bit on x64)
+        )
+        
+        # Track the allocation in fd_tracker
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        # Determine allocation size for tracking
+        allocation_size = 4096  # Default page size
+        for size_val in Utils.get_values_from_multivalues(size_vals):
+            if size_val.concrete:
+                allocation_size = size_val.concrete_value
+                break
+        
+        # Store allocation information
+        self.fd_tracker[stored_func.name].append({
+            "val": allocated_ptr,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "size": allocation_size,
+            "type": "virtual_memory"
+        })
+        
+        # Log security-relevant information
+        for protect_val in Utils.get_values_from_multivalues(protect_vals):
+            if protect_val.concrete:
+                protect_flags = protect_val.concrete_value
+                # Check for executable memory (PAGE_EXECUTE_* flags)
+                if protect_flags & 0x10:  # PAGE_EXECUTE
+                    self.log.warning("VirtualAlloc: Executable memory allocated at %#x", 
+                                stored_func.code_loc.ins_addr)
+                if protect_flags & 0x40:  # PAGE_EXECUTE_READWRITE
+                    self.log.warning("VirtualAlloc: RWX memory allocated at %#x", 
+                                stored_func.code_loc.ins_addr)
+        
+        return True, state, MultiValues(allocated_ptr)
 
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_VirtualFree(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle VirtualFree - Windows virtual memory deallocation
+        .. sourcecode:: c
+            BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: VirtualFree, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("VirtualFree")
+        
+        # Extract parameters
+        address_arg = cc.get_next_arg()      # lpAddress
+        size_arg = cc.get_next_arg()         # dwSize
+        free_type_arg = cc.get_next_arg()    # dwFreeType
+        
+        address_vals = Utils.get_values_from_cc_arg(address_arg, state, arch)
+        
+        # Clean up tracking for freed memory
+        for address_val in Utils.get_values_from_multivalues(address_vals):
+            if address_val.concrete:
+                freed_addr = address_val.concrete_value
+                self.log.debug("VirtualFree: Memory freed at address %#x", freed_addr)
+        
+        # Return success (TRUE)
+        success_val = claripy.BVV(1, 32)  # BOOL TRUE
+        return True, state, MultiValues(success_val)
