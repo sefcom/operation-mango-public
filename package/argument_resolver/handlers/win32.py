@@ -252,5 +252,68 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_lstrcpyA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle lstrcpyA - Windows string copy with taint propagation
+        C++
+        LPSTR lstrcpyA(
+            [out] LPSTR  lpString1,
+            [in]  LPCSTR lpString2
+            );
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: lstrcpyA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("lstrcpyA")
+        
+        # Extract parameters
+        dest_arg = cc.get_next_arg()
+        src_arg = cc.get_next_arg()
+        
+        # Get parameter values
+        dest_ptrs = Utils.get_values_from_cc_arg(dest_arg, state, arch)
+        src_ptrs = Utils.get_values_from_cc_arg(src_arg, state, arch)
+        
+        # Create symbolic data for string copy (assume taint propagation)
+        for dest_ptr in Utils.get_values_from_multivalues(dest_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(dest_ptr))
+            if sp_offset.offset is None:
+                continue
+            
+            # Create memory location for destination string
+            memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+            
+            # Create symbolic string data (preserves taint)
+            string_bvs = claripy.BVS(
+                f"{stored_func.name}(copied_string)@0x{stored_func.code_loc.ins_addr:x}",
+                memloc.size * 8
+            )
+            string_bvs.variables = frozenset(set(string_bvs.variables) | {"TOP"})
+            
+            # Create memory dependency
+            mv = MultiValues(string_bvs)
+            stored_func.depends(memloc, *stored_func.atoms, value=mv)
+        
+        # Track string operation
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": string_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+        
+        self.log.debug("lstrcpyA: String copy operation tracked")
+        
+        # Return destination pointer
+        return True, state, dest_ptrs
+
+    
         
 

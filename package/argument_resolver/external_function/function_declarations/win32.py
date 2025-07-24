@@ -62,6 +62,12 @@ winreg_decls = {
         SimTypePointer(SimTypeChar()),      # lpBuffer  
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
+    
+    "lstrcpyA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpString1 (destination)
+        SimTypePointer(SimTypeChar()),      # lpString2 (source)
+    ], SimTypePointer(SimTypeChar())),      # Returns lpString1
+
 
 }
 
