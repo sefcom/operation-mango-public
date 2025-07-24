@@ -63,5 +63,8 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "GetClipboardData": SimTypeFunction([
+        SimTypeInt(),                       # uFormat
+    ], SimTypePointer(SimTypeBottom())),      # Returns HANDLE
 }
 

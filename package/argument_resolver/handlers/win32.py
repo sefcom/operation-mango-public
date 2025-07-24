@@ -252,5 +252,41 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
-        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetClipboardData(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle GetClipboardData: Retrieves data from the clipboard in a specified format. The clipboard must have been opened previously.
+        C++
+        HANDLE GetClipboardData(
+        [in] UINT uFormat
+        );
 
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+
+        self.log.debug("RDA: GetClipboardData, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GetClipboardData")
+
+        clipboard_format = cc.get_next_arg()    #uFormat
+        format_ptr = Utils.get_values_from_cc_arg(clipboard_format, state, arch)
+
+        clipboard_data = claripy.BVS(
+            f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        clipboard_data.variables = frozenset(set(clipboard_data.variables) | {"TOP"})
+
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        self.fd_tracker[stored_func.name].append({
+            "val": clipboard_data,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+
+        return True, state, MultiValues(clipboard_data)

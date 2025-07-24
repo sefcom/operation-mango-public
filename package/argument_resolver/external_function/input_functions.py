@@ -14,7 +14,7 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "GetCommandLineA",
 } | {x.name for x in VULN_TYPES["getter"]}
 
-INPUT_EXTERNAL_FUNCTIONS.add("GetEnvironmentVariableA")
+INPUT_EXTERNAL_FUNCTIONS.add("GetClipboardData")
 
 KEY_BEACONS = {
     "REQUEST_METHOD",
