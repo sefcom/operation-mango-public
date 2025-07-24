@@ -98,6 +98,10 @@ winreg_decls = {
     "LocalFree": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hMem - local memory handle to free
     ], SimTypePointer(SimTypeBottom())),   # Returns: HLOCAL (NULL on success)
+    "lstrcatA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpString1 (destination)
+        SimTypePointer(SimTypeChar()),      # lpString2 (source to append)
+    ], SimTypePointer(SimTypeChar())),      # Returns lpString1
 
 
 }

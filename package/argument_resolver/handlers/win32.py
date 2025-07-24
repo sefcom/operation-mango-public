@@ -267,7 +267,6 @@ class WinHandlers(HandlerBase):
         :param state: Register and memory definitions and uses
         """
         self.log.debug("RDA: GetStdHandle, ins_addr=%#x", stored_func.code_loc.ins_addr)
-        
         arch = state.arch
         cc = self._calling_convention_resolver.get_cc("GetStdHandle")
         
@@ -313,6 +312,68 @@ class WinHandlers(HandlerBase):
         })
         
         return True, state, MultiValues(handle_bvs)
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_lstrcatA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle lstrcatA - Windows string concatenation with taint propagation
+        C++
+        LPSTR lstrcatA(
+            [in, out] LPSTR  lpString1,
+            [in]      LPCSTR lpString2
+            );
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: lstrcatA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("lstrcatA")
+        
+        # Extract parameters
+        dest_arg = cc.get_next_arg()        # lpString1 (destination)
+        src_arg = cc.get_next_arg()         # lpString2 (source to append)
+        
+        # Get parameter values
+        dest_ptrs = Utils.get_values_from_cc_arg(dest_arg, state, arch)
+        src_ptrs = Utils.get_values_from_cc_arg(src_arg, state, arch)
+        
+        # Create symbolic data for string concatenation (preserves taint from both strings)
+        for dest_ptr in Utils.get_values_from_multivalues(dest_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(dest_ptr))
+            if sp_offset.offset is None:
+                continue
+            
+            # Create memory location for destination string (larger size for concatenation)
+            memloc = MemoryLocation(sp_offset, 512, endness=Endness.BE)  # Larger for concat
+            
+            # Create symbolic string data (represents concatenated result)
+            concat_bvs = claripy.BVS(
+                f"{stored_func.name}(concatenated_string)@0x{stored_func.code_loc.ins_addr:x}",
+                memloc.size * 8
+            )
+            concat_bvs.variables = frozenset(set(concat_bvs.variables) | {"TOP"})
+            
+            # Create memory dependency for concatenated result
+            mv = MultiValues(concat_bvs)
+            stored_func.depends(memloc, *stored_func.atoms, value=mv)
+        
+        # Track string concatenation operation
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": concat_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "operation": "string_concatenation"
+        })
+        
+        self.log.debug("lstrcatA: String concatenation operation tracked")
+        
+        # Return destination pointer (lstrcat returns lpString1)
+        return True, state, dest_ptrs
     
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
