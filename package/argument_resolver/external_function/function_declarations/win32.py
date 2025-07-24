@@ -55,6 +55,14 @@ winreg_decls = {
     ], SimTypePointer(SimTypeBottom())),   # Returns HANDLE
 
     "GetCommandLineA": SimTypeFunction([], SimTypePointer(SimTypeChar())),
+    
+    # Example: GetEnvironmentVariableA from MSDN
+    "GetEnvironmentVariableA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpName
+        SimTypePointer(SimTypeChar()),      # lpBuffer  
+        SimTypeInt(),                       # nSize
+    ], SimTypeInt()),                       # Return: DWORD
+
 
     
 }

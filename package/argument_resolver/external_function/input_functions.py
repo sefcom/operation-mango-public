@@ -14,10 +14,7 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "GetCommandLineA",
 } | {x.name for x in VULN_TYPES["getter"]}
 
-# This is sloppy but whatever
-print(f"AVAILABLE_WIN32_API_SOURCE_FUNCTIONS:")
-for function in INPUT_EXTERNAL_FUNCTIONS - {"read", "fread", "fgets", "recv", "recvfrom", "custom_param_parser"}: 
-    print(function)
+INPUT_EXTERNAL_FUNCTIONS.add("GetEnvironmentVariableA")
 
 KEY_BEACONS = {
     "REQUEST_METHOD",

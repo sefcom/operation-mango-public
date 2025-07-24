@@ -147,44 +147,110 @@ class WinHandlers(HandlerBase):
         return True, state, MultiValues(cmdline_bvs)
 
 
-@HandlerBase.returns
-@HandlerBase.tag_parameter_definitions
-def handle_CreateFileA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    """Handle CreateFileA - File Handle Creator"""
-    self.log.debug("RDA: CreateFileA, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    
-    arch = state.arch
-    cc = self._calling_convention_resolver.get_cc("CreateFileA")
-    
-    # Extract parameters (can use full signature now)
-    filename = cc.get_next_arg()      # lpFileName
-    access = cc.get_next_arg()        # dwDesiredAccess
-    share = cc.get_next_arg()         # dwShareMode
-    sec_atr = cc.get_next_arg()       # lpSecurityAttributes
-    crt_disp = cc.get_next_arg()      # dwCreationDisposition
-    flg_atr = cc.get_next_arg()       # dwFlagsAndAttributes
-    tmplte_file = cc.get_next_arg()   # hTemplateFile
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_CreateFileA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Handle CreateFileA - File Handle Creator"""
+        self.log.debug("RDA: CreateFileA, ins_addr=%#x", stored_func.code_loc.ins_addr)
         
-    # Get filename for handle naming
-    filename_ptrs = Utils.get_values_from_cc_arg(filename, state, arch)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("CreateFileA")
+        
+        # Extract parameters (can use full signature now)
+        filename = cc.get_next_arg()      # lpFileName
+        access = cc.get_next_arg()        # dwDesiredAccess
+        share = cc.get_next_arg()         # dwShareMode
+        sec_atr = cc.get_next_arg()       # lpSecurityAttributes
+        crt_disp = cc.get_next_arg()      # dwCreationDisposition
+        flg_atr = cc.get_next_arg()       # dwFlagsAndAttributes
+        tmplte_file = cc.get_next_arg()   # hTemplateFile
+            
+        # Get filename for handle naming
+        filename_ptrs = Utils.get_values_from_cc_arg(filename, state, arch)
+        
+        # Create file handle (not an input source itself)
+        file_handle = claripy.BVS(
+            f"{stored_func.name}(file)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        file_handle.variables = frozenset(set(file_handle.variables) | {"TOP"})
+        
+        # Store handle in fd_tracker for future ReadFile operations
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": file_handle,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
     
-    # Create file handle (not an input source itself)
-    file_handle = claripy.BVS(
-        f"{stored_func.name}(file)@0x{stored_func.code_loc.ins_addr:x}",
-        arch.bits
-    )
-    file_handle.variables = frozenset(set(file_handle.variables) | {"TOP"})
-    
-    # Store handle in fd_tracker for future ReadFile operations
-    if stored_func.name not in self.fd_tracker:
-        self.fd_tracker[stored_func.name] = []
-    
-    self.fd_tracker[stored_func.name].append({
-        "val": file_handle,
-        "parent": [],
-        "ins_addr": stored_func.code_loc.ins_addr
-    })
-    
-    return True, state, MultiValues(file_handle)
+        return True, state, MultiValues(file_handle)
 
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetEnvironmentVariableA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Retrieves a handle to the specified standard device 
+        (standard input, standard output, or standard error).
+        C++
+            DWORD GetEnvironmentVariableA(
+            [in, optional]  LPCSTR lpName,
+            [out, optional] LPSTR  lpBuffer,
+            [in]            DWORD  nSize
+            );
+            
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: GetEnvironmentVariableA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GetEnvironmentVariableA")
+        
+        env_name = cc.get_next_arg()            #lpName
+        str_buffer = cc.get_next_arg()          #lpBuffer
+        str_buffer_size = cc.get_next_arg()     #nSize
+        
+        env_name_ptr = Utils.get_values_from_cc_arg(env_name, state, arch)
+        str_buffer_ptr = Utils.get_values_from_cc_arg(str_buffer, state, arch)
+        size_values = Utils.get_values_from_cc_arg(str_buffer_size, state, arch)
+        
+    
+        # Step 3c: Create symbolic data (for sources)
+        env_bvs = claripy.BVS(
+            f"{stored_func.name}(env_var)@0x{stored_func.code_loc.ins_addr:x}",
+            256 * 8  # 256 bytes for environment variable
+        )
+        env_bvs.variables = frozenset(set(env_bvs.variables) | {"TOP"})
+        
+        # Step 3d: Track in fd_tracker (for sources)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": env_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+        
+        # Step 3e: Create memory dependencies for buffer
+        for ptr in Utils.get_values_from_multivalues(str_buffer_ptr):
+            for size_val in Utils.get_values_from_multivalues(size_values):
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is not None:
+                    if size_val.concrete:
+                        size = min(size_val.concrete_value, self.MAX_READ_SIZE)
+                        memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                    else:
+                        memloc = MemoryLocation(sp_offset, arch.bytes, endness=Endness.BE)
+                    
+                    # Create dependency
+                    mv = MultiValues(env_bvs)
+                    stored_func.depends(memloc, *stored_func.atoms, value=mv)
+        
+        # Step 3f: Return success with symbolic return value
+        return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
+        return True, state, MultiValues(return_val)
+        
+        
 
