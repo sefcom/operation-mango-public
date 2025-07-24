@@ -251,6 +251,6 @@ class WinHandlers(HandlerBase):
         # Step 3f: Return success with symbolic return value
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
-        
+    
         
 

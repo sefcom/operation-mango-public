@@ -168,9 +168,13 @@ def _get_strings_from_pointer(pointer, state, load_func):
     try:
         mv = load_func(pointer, 2)
     except SimMemoryMissingError:
+        return MultiValues(state.top(state.arch.bits))
+    
+    try:
+        mv = load_func(pointer, 2)
+    except SimMemoryMissingError:
         pass
-        #return MultiValues(state.top(state.arch.bits))
-
+    
     for bvv in mv[0]:
         defns = list(state.extract_defs(bvv))
         if len(defns) == 0:
