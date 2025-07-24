@@ -380,4 +380,96 @@ class WinHandlers(HandlerBase):
 
         
             
+        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GlobalAlloc(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle GlobalAlloc - Windows global memory allocation
+        .. sourcecode:: c
+            HGLOBAL GlobalAlloc(UINT uFlags, SIZE_T dwBytes);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: GlobalAlloc, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GlobalAlloc")
+        
+        # Extract parameters
+        flags_arg = cc.get_next_arg()        # uFlags
+        size_arg = cc.get_next_arg()         # dwBytes
+        
+        # Get parameter values
+        flags_vals = Utils.get_values_from_cc_arg(flags_arg, state, arch)
+        size_vals = Utils.get_values_from_cc_arg(size_arg, state, arch)
+        
+        # Create symbolic memory handle for allocated memory
+        allocated_handle = claripy.BVS(
+            f"{stored_func.name}(global_memory)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits  # Handle size (64-bit on x64)
+        )
+        
+        # Track the allocation in fd_tracker
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        # Determine allocation size for tracking
+        allocation_size = 1024  # Default size
+        for size_val in Utils.get_values_from_multivalues(size_vals):
+            if size_val.concrete:
+                allocation_size = size_val.concrete_value
+                break
+        
+        # Store allocation information
+        self.fd_tracker[stored_func.name].append({
+            "val": allocated_handle,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "size": allocation_size,
+            "type": "global_memory"
+        })
+        
+        # Log allocation flags for security analysis
+        for flags_val in Utils.get_values_from_multivalues(flags_vals):
+            if flags_val.concrete:
+                flags = flags_val.concrete_value
+                if flags & 0x0040:  # GMEM_ZEROINIT
+                    self.log.debug("GlobalAlloc: Zero-initialized memory at %#x", 
+                                stored_func.code_loc.ins_addr)
+                if flags & 0x0002:  # GMEM_MOVEABLE
+                    self.log.debug("GlobalAlloc: Moveable memory at %#x", 
+                                stored_func.code_loc.ins_addr)
+        
+        return True, state, MultiValues(allocated_handle)
+
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GlobalFree(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle GlobalFree - Windows global memory deallocation
+        .. sourcecode:: c
+            HGLOBAL GlobalFree(HGLOBAL hMem);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: GlobalFree, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GlobalFree")
+        
+        # Extract parameter
+        handle_arg = cc.get_next_arg()       # hMem
+        handle_vals = Utils.get_values_from_cc_arg(handle_arg, state, arch)
+        
+        # Clean up tracking for freed memory
+        for handle_val in Utils.get_values_from_multivalues(handle_vals):
+            if handle_val.concrete:
+                freed_handle = handle_val.concrete_value
+                self.log.debug("GlobalFree: Memory freed at handle %#x", freed_handle)
+        
+        # Return NULL on success (standard GlobalFree behavior)
+        success_val = claripy.BVV(0, arch.bits)  # NULL pointer
+        return True, state, MultiValues(success_val)
+
 

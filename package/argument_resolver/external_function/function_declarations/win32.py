@@ -70,6 +70,14 @@ winreg_decls = {
     "CloseHandle": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hObject (HANDLE)
     ], SimTypeInt()),                       # Returns BOOL
+    "GlobalAlloc": SimTypeFunction([
+        SimTypeInt(signed=False),           # uFlags - allocation flags
+        SimTypeLong(signed=False),          # dwBytes - size in bytes
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HGLOBAL (memory handle)
+
+    "GlobalFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hMem - memory handle to free
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HGLOBAL (NULL on success)
 
 }
 
