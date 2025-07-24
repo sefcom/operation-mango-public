@@ -790,3 +790,28 @@ class WinHandlers(HandlerBase):
         })
         
         return True, state, MultiValues(alloc_ptr)
+            
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_lstrlenA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle lstrlenA - Windows string length calculation
+        .. sourcecode:: c
+            int lstrlenA(LPCSTR lpString);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: lstrlenA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("lstrlenA")
+        
+        # Extract parameter (for calling convention compliance)
+        string_arg = cc.get_next_arg()
+        string_ptrs = Utils.get_values_from_cc_arg(string_arg, state, arch)
+        
+        # Return concrete length - no fd_tracker needed for length operations
+        length_val = claripy.BVV(32, 32)  # Assume 32-character string
+        return True, state, MultiValues(length_val)
+    
+    
