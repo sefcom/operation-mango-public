@@ -114,5 +114,18 @@ winreg_decls = {
     ], SimTypeInt()),                       # Returns int (string length)
 
 
+    "VirtualAlloc": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # lpAddress - starting address
+        SimTypeLong(signed=False),          # dwSize - size of allocation
+        SimTypeInt(signed=False),           # flAllocationType - allocation type
+        SimTypeInt(signed=False),           # flProtect - protection flags
+    ], SimTypePointer(SimTypeBottom())),   # Returns: LPVOID (allocated memory pointer)
+    
+    "VirtualFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # lpAddress - address to free
+        SimTypeLong(signed=False),          # dwSize - size to free
+        SimTypeInt(signed=False),           # dwFreeType - free type flags
+    ], SimTypeInt()),                       # Returns: BOOL
+    
 }
 
