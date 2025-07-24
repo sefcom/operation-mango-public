@@ -314,4 +314,70 @@ class WinHandlers(HandlerBase):
         
         return True, state, MultiValues(handle_bvs)
 
+    
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_CloseHandle(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle CloseHandle - Closes handles and cleans up tracking
+        
+        C++
+            BOOL CloseHandle(
+            [in] HANDLE hObject
+            );
+            
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: CloseHandle, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("CloseHandle")
+        
+        # Extract handle parameter
+        handle_arg = cc.get_next_arg()
+        handle_values = Utils.get_values_from_cc_arg(handle_arg, state, arch)
+        
+        # Attempt to find and remove handle from fd_tracker
+        handles_closed = 0
+        for handle_val in Utils.get_values_from_multivalues(handle_values):
+            # Search through fd_tracker for matching handles
+            for func_name, handle_list in self.fd_tracker.items():
+                if isinstance(handle_list, list):
+                    # Look for handles that match this value
+                    for i, handle_entry in enumerate(handle_list):
+                        if isinstance(handle_entry, dict) and "val" in handle_entry:
+                            handle_bvs = handle_entry["val"]
+                            # Check if this handle matches (simplified comparison)
+                            if hasattr(handle_bvs, 'variables') and "TOP" in handle_bvs.variables:
+                                # Remove this handle entry
+                                self.log.debug("CloseHandle: Removing handle from %s", func_name)
+                                handle_list.pop(i)
+                                handles_closed += 1
+                                break
+        
+        # Also clean up any integer-keyed handles (like stdin/stdout/stderr)
+        for fd_key in list(self.fd_tracker.keys()):
+            if isinstance(fd_key, int):
+                # Check if this handle value matches any standard handles
+                for handle_val in Utils.get_values_from_multivalues(handle_values):
+                    if handle_val.concrete and handle_val.concrete_value == fd_key:
+                        self.log.debug("CloseHandle: Removing standard handle %d", fd_key)
+                        del self.fd_tracker[fd_key]
+                        handles_closed += 1
+                        break
+        
+        # Log cleanup results
+        if handles_closed > 0:
+            self.log.debug("CloseHandle: Successfully closed %d handles", handles_closed)
+        else:
+            self.log.debug("CloseHandle: No matching handles found in fd_tracker")
+        
+        # Return success (TRUE)
+        return_val = claripy.BVV(1, 32)  # TRUE
+        return True, state, MultiValues(return_val)
+
+        
+            
 
