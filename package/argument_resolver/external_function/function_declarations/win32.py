@@ -84,6 +84,12 @@ winreg_decls = {
     SimTypeLong(signed=False),             # dwBytes (SIZE_T)
     ], SimTypePointer(SimTypeBottom())),   # Returns LPVOID
 
+    
+    "HeapFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hHeap (HANDLE)
+        SimTypeInt(),                       # dwFlags (DWORD)
+        SimTypePointer(SimTypeBottom()),    # lpMem (LPVOID)
+    ], SimTypeInt()),                       # Returns BOOL
 
 }
 

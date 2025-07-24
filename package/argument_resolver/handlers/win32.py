@@ -313,6 +313,59 @@ class WinHandlers(HandlerBase):
         })
         
         return True, state, MultiValues(handle_bvs)
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_HeapFree(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle HeapFree - Cleans up heap memory allocation tracking
+        C++
+            BOOL HeapFree(
+            [in] HANDLE                 hHeap,
+            [in] DWORD                  dwFlags,
+            [in] _Frees_ptr_opt_ LPVOID lpMem
+            );
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: HeapFree, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("HeapFree")
+        
+        # Extract parameters
+        heap_arg = cc.get_next_arg()
+        flags_arg = cc.get_next_arg()
+        mem_arg = cc.get_next_arg()
+        
+        # Get memory pointer for tracking
+        mem_values = Utils.get_values_from_cc_arg(mem_arg, state, arch)
+        
+        # Create marker for this free operation
+        free_marker = claripy.BVS(
+            f"{stored_func.name}(memory_freed)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        
+        # Track the free operation (for debugging and preventing double-free detection)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": free_marker,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "action": "memory_freed"
+        })
+        
+        self.log.debug("HeapFree: Marked memory as freed")
+        
+        # Return success (TRUE)
+        return_val = claripy.BVV(1, 32)
+        return True, state, MultiValues(return_val)
+
+        
+            
 
     
     
