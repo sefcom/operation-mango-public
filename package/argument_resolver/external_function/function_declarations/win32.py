@@ -90,6 +90,15 @@ winreg_decls = {
         SimTypeInt(),                       # dwFlags (DWORD)
         SimTypePointer(SimTypeBottom()),    # lpMem (LPVOID)
     ], SimTypeInt()),                       # Returns BOOL
+    "LocalAlloc": SimTypeFunction([
+        SimTypeInt(signed=False),           # uFlags - allocation flags
+        SimTypeLong(signed=False),          # uBytes - size in bytes
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HLOCAL (local memory handle)
+
+    "LocalFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hMem - local memory handle to free
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HLOCAL (NULL on success)
+
 
 }
 

@@ -363,6 +363,107 @@ class WinHandlers(HandlerBase):
         # Return success (TRUE)
         return_val = claripy.BVV(1, 32)
         return True, state, MultiValues(return_val)
+        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_LocalAlloc(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle LocalAlloc - Windows local memory allocation
+        .. sourcecode:: c
+            HLOCAL LocalAlloc(UINT uFlags, SIZE_T uBytes);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: LocalAlloc, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("LocalAlloc")
+        
+        # Extract parameters
+        flags_arg = cc.get_next_arg()        # uFlags
+        size_arg = cc.get_next_arg()         # uBytes
+        
+        # Get parameter values
+        flags_vals = Utils.get_values_from_cc_arg(flags_arg, state, arch)
+        size_vals = Utils.get_values_from_cc_arg(size_arg, state, arch)
+        
+        # Create symbolic memory handle for allocated local memory
+        allocated_handle = claripy.BVS(
+            f"{stored_func.name}(local_memory)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits  # Handle size (64-bit on x64)
+        )
+        
+        # Track the allocation in fd_tracker
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        # Determine allocation size for tracking
+        allocation_size = 512  # Default size for local allocations
+        for size_val in Utils.get_values_from_multivalues(size_vals):
+            if size_val.concrete:
+                allocation_size = size_val.concrete_value
+                break
+        
+        # Store allocation information
+        self.fd_tracker[stored_func.name].append({
+            "val": allocated_handle,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "size": allocation_size,
+            "type": "local_memory"
+        })
+        
+        # Log allocation flags for security analysis
+        for flags_val in Utils.get_values_from_multivalues(flags_vals):
+            if flags_val.concrete:
+                flags = flags_val.concrete_value
+                if flags & 0x0040:  # LMEM_ZEROINIT
+                    self.log.debug("LocalAlloc: Zero-initialized memory at %#x", 
+                                stored_func.code_loc.ins_addr)
+                if flags & 0x0002:  # LMEM_MOVEABLE
+                    self.log.debug("LocalAlloc: Moveable memory at %#x", 
+                                stored_func.code_loc.ins_addr)
+                if flags & 0x0000:  # LMEM_FIXED
+                    self.log.debug("LocalAlloc: Fixed memory at %#x", 
+                                stored_func.code_loc.ins_addr)
+        
+        return True, state, MultiValues(allocated_handle)
+
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_LocalFree(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle LocalFree - Windows local memory deallocation
+        .. sourcecode:: c
+            HLOCAL LocalFree(HLOCAL hMem);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: LocalFree, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("LocalFree")
+        
+        # Extract parameter
+        handle_arg = cc.get_next_arg()       # hMem
+        handle_vals = Utils.get_values_from_cc_arg(handle_arg, state, arch)
+        
+        # Clean up tracking for freed local memory
+        for handle_val in Utils.get_values_from_multivalues(handle_vals):
+            if handle_val.concrete:
+                freed_handle = handle_val.concrete_value
+                self.log.debug("LocalFree: Local memory freed at handle %#x", freed_handle)
+            elif hasattr(handle_val, 'depends') and handle_val.depends():
+                # Track symbolic handle dependencies
+                self.log.debug("LocalFree: Symbolic local memory freed at %#x", 
+                            stored_func.code_loc.ins_addr)
+        
+        # Return NULL on success (standard LocalFree behavior)
+        success_val = claripy.BVV(0, arch.bits)  # NULL pointer
+        return True, state, MultiValues(success_val)
+
+        
+            
 
         
             
