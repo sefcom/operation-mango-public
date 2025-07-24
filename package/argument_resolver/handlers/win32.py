@@ -252,5 +252,37 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetCurrentProcess(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        HANDLE GetCurrentProcess: Retrieves a pseudo handle for the current process.
+        C++
+        HANDLE GetCurrentProcess();
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
         
+        self.log.debug("RDA: GetCurrentProcess, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GetCurrentProcess")
 
+        #Create symbolic data
+        process_handle = claripy.BVS(
+        f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}",
+        arch.bits
+        )
+
+        # Use stored_func.name as key
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        self.fd_tracker[stored_func.name].append({
+            "val": process_handle,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+
+        # Return success with appropriate return value
+        return True, state, MultiValues(process_handle)

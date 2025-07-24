@@ -63,5 +63,7 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "GetCurrentProcess": SimTypeFunction([
+    ], SimTypePointer(SimTypeBottom)),
 }
 
