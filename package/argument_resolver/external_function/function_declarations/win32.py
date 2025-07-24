@@ -62,6 +62,10 @@ winreg_decls = {
         SimTypePointer(SimTypeChar()),      # lpBuffer  
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
+    
+    "CloseHandle": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hObject (HANDLE)
+    ], SimTypeInt()),                       # Returns BOOL
 
 }
 
