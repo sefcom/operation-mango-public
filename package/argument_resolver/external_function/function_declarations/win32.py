@@ -78,6 +78,12 @@ winreg_decls = {
     "GlobalFree": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hMem - memory handle to free
     ], SimTypePointer(SimTypeBottom())),   # Returns: HGLOBAL (NULL on success)
+    "HeapAlloc": SimTypeFunction([
+    SimTypePointer(SimTypeBottom()),       # hHeap (HANDLE)
+    SimTypeInt(),                          # dwFlags (DWORD)
+    SimTypeLong(signed=False),             # dwBytes (SIZE_T)
+    ], SimTypePointer(SimTypeBottom())),   # Returns LPVOID
+
 
 }
 
