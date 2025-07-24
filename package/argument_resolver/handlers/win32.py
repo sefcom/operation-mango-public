@@ -257,6 +257,10 @@ class WinHandlers(HandlerBase):
     def handle_GetStdHandle(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
         """
         Handle GetStdHandle - Returns standard device handles
+        C++
+        HANDLE WINAPI GetStdHandle(
+                _In_ DWORD nStdHandle
+                );
         .. sourcecode:: c
             HANDLE GetStdHandle(DWORD nStdHandle);
         :param stored_func: Function call information and location
