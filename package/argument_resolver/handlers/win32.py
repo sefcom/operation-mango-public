@@ -252,5 +252,35 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
-        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_ReadProcessMemory(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Minimal handler for ReadProcessMemory as a memory read source."""
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("ReadProcessMemory")
+
+        # Extract arguments
+        lpBuffer = cc.get_next_arg()
+        nSize = cc.get_next_arg()
+
+        # Get argument values
+        buf_ptrs = Utils.get_values_from_cc_arg(lpBuffer, state, arch)
+        size_values = Utils.get_values_from_cc_arg(nSize, state, arch)
+
+        for ptr in Utils.get_values_from_multivalues(buf_ptrs):
+            for count_val in Utils.get_values_from_multivalues(size_values):
+                size = count_val.concrete_value if count_val.concrete else arch.bytes
+                memloc = MemoryLocation(ptr, size, endness=Endness.BE)
+
+                buf_bvs = claripy.BVS(
+                    f"{stored_func.name}_read@{stored_func.code_loc.ins_addr:x}",
+                    size * 8
+                )
+                buf_bvs.variables = frozenset({"TOP"})  # mark as tainted
+                stored_func.depends(memloc, *stored_func.atoms, value=MultiValues(buf_bvs))
+
+        return True, state, MultiValues(claripy.BVV(1, 32))  # Return success
+
+
+
 

@@ -63,5 +63,12 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "ReadProcessMemory": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hProcess
+        SimTypePointer(SimTypeBottom()),    # lpBaseAddress
+        SimTypePointer(SimTypeBottom()),    # lpBuffer
+        SimTypeLong(signed=False),         # nSize
+        SimTypePointer(SimTypeLong(signed=False)),     # lpNumberOfBytesRead
+    ], SimTypeInt(signed=False)), 
 }
 
