@@ -252,5 +252,62 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetStdHandle(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle GetStdHandle - Returns standard device handles
+        .. sourcecode:: c
+            HANDLE GetStdHandle(DWORD nStdHandle);
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: GetStdHandle, ins_addr=%#x", stored_func.code_loc.ins_addr)
         
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GetStdHandle")
+        
+        # Extract nStdHandle parameter
+        std_handle_arg = cc.get_next_arg()
+        std_handle_values = Utils.get_values_from_cc_arg(std_handle_arg, state, arch)
+        
+        # Create handle based on standard device type
+        handle_bvs = claripy.BVS(
+            f"{stored_func.name}(std_handle)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        handle_bvs.variables = frozenset(set(handle_bvs.variables) | {"TOP"})
+        
+        # Store in fd_tracker for future I/O operations
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        # Determine handle type based on nStdHandle value
+        handle_type = "unknown"
+        for std_val in Utils.get_values_from_multivalues(std_handle_values):
+            if std_val.concrete:
+                if std_val.concrete_value == 0xFFFFFFF6:  # STD_INPUT_HANDLE (-10)
+                    handle_type = "stdin"
+                elif std_val.concrete_value == 0xFFFFFFF5:  # STD_OUTPUT_HANDLE (-11)
+                    handle_type = "stdout"
+                elif std_val.concrete_value == 0xFFFFFFF4:  # STD_ERROR_HANDLE (-12)
+                    handle_type = "stderr"
+        
+        # Update handle name with type information
+        if handle_type != "unknown":
+            handle_bvs = claripy.BVS(
+                f"{stored_func.name}({handle_type})@0x{stored_func.code_loc.ins_addr:x}",
+                arch.bits
+            )
+            handle_bvs.variables = frozenset(set(handle_bvs.variables) | {"TOP"})
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": handle_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr,
+            "handle_type": handle_type
+        })
+        
+        return True, state, MultiValues(handle_bvs)
+
 
