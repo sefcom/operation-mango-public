@@ -252,5 +252,45 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_HeapAlloc(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle HeapAlloc - Tracks dynamic memory allocation
+        C++
+            DECLSPEC_ALLOCATOR LPVOID HeapAlloc(
+            [in] HANDLE hHeap,
+            [in] DWORD  dwFlags,
+            [in] SIZE_T dwBytes
+            );
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: HeapAlloc, ins_addr=%#x", stored_func.code_loc.ins_addr)
         
-
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("HeapAlloc")
+        
+        # Extract parameters
+        heap_arg = cc.get_next_arg()
+        flags_arg = cc.get_next_arg()
+        size_arg = cc.get_next_arg()
+        
+        # Create symbolic pointer for allocated memory
+        alloc_ptr = claripy.BVS(
+            f"{stored_func.name}(heap_memory)@0x{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        alloc_ptr.variables = frozenset(set(alloc_ptr.variables) | {"TOP"})
+        
+        # Store in fd_tracker using function name (like other handlers)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+        
+        self.fd_tracker[stored_func.name].append({
+            "val": alloc_ptr,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+        
+        return True, state, MultiValues(alloc_ptr)
