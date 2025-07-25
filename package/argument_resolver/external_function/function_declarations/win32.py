@@ -63,5 +63,17 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "AcceptEx": SimTypeFunction([
+        SimTypeInt(),                       # SOCKET       sListenSocket
+        SimTypeInt(),                       # SOCKET       sAcceptSocket
+        SimTypePointer(SimTypeBottom()),    # PVOID        lpOutputBuffer
+        SimTypeInt(),                       # DWORD        dwReceiveDataLength
+        SimTypeInt(),                       # DWORD        dwLocalAddressLength
+        SimTypeInt(),                       # DWORD        dwRemoteAddressLength
+        SimTypePointer(SimTypeInt()),       # LPDWORD      lpdwBytesReceived
+        SimTypePointer(SimTypeBottom()),    # LPOVERLAPPED lpOverlapped
+    ], SimTypeInt()),                       # Return: BOOL
+
+
 }
 
