@@ -63,5 +63,13 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "GetModuleFileNameA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hModule
+        SimTypePointer(SimTypeChar()),      # lpFilename
+        SimTypeInt(),                       # nSize
+    ], SimTypeInt()),                       # Return: DWORD
+
+
+
 }
 
