@@ -253,6 +253,62 @@ class WinHandlers(HandlerBase):
         return True, state, MultiValues(return_val)
     
    
+    # @HandlerBase.returns
+    # @HandlerBase.tag_parameter_definitions
+    # def handle_lstrcpyA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+    #     """
+    #     Handle lstrcpyA - Windows string copy with taint propagation
+    #     C++
+    #     LPSTR lstrcpyA(
+    #         [out] LPSTR  lpString1,
+    #         [in]  LPCSTR lpString2
+    #         );
+    #     :param stored_func: Function call information and location
+    #     :param state: Register and memory definitions and uses
+    #     """
+    #     self.log.debug("RDA: lstrcpyA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+    #     arch = state.arch
+    #     cc = self._calling_convention_resolver.get_cc("lstrcpyA")
+        
+    #     # Extract parameters
+    #     dest_arg = cc.get_next_arg()
+    #     src_arg = cc.get_next_arg()
+        
+    #     # Get parameter values
+    #     dest_ptrs = Utils.get_values_from_cc_arg(dest_arg, state, arch)
+    #     src_ptrs = Utils.get_values_from_cc_arg(src_arg, state, arch)
+        
+    #     # Create symbolic data for string copy (UNCONDITIONALLY)
+    #     string_bvs = claripy.BVS(
+    #         f"{stored_func.name}(copied_string)@0x{stored_func.code_loc.ins_addr:x}",
+    #         256 * 8  # 256 bytes for string
+    #     )
+    #     string_bvs.variables = frozenset(set(string_bvs.variables) | {"TOP"})
+        
+    #     # Process memory dependencies for each destination pointer
+    #     for dest_ptr in Utils.get_values_from_multivalues(dest_ptrs):
+    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(dest_ptr))
+    #         if sp_offset.offset is not None:
+    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+    #             mv = MultiValues(string_bvs)
+    #             stored_func.depends(memloc, *stored_func.atoms, value=mv)
+        
+    #     # Track string operation in fd_tracker
+    #     if stored_func.name not in self.fd_tracker:
+    #         self.fd_tracker[stored_func.name] = []
+        
+    #     self.fd_tracker[stored_func.name].append({
+    #         "val": string_bvs,
+    #         "parent": [],
+    #         "ins_addr": stored_func.code_loc.ins_addr
+    #     })
+        
+    #     self.log.debug("lstrcpyA: String copy operation tracked")
+        
+    #     # Return destination pointer
+    #     return True, state, dest_ptrs
+    
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_lstrcpyA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
@@ -279,27 +335,30 @@ class WinHandlers(HandlerBase):
         dest_ptrs = Utils.get_values_from_cc_arg(dest_arg, state, arch)
         src_ptrs = Utils.get_values_from_cc_arg(src_arg, state, arch)
         
-        # Create symbolic data for string copy (assume taint propagation)
+        # Create symbolic data for string copy (UNCONDITIONALLY)
+        string_bvs = claripy.BVS(
+            f"{stored_func.name}(copied_string)@0x{stored_func.code_loc.ins_addr:x}",
+            256 * 8  # 256 bytes for string
+        )
+        string_bvs.variables = frozenset(set(string_bvs.variables) | {"TOP"})
+        
+        # Process memory dependencies for each destination pointer
         for dest_ptr in Utils.get_values_from_multivalues(dest_ptrs):
             sp_offset = SpOffset(arch.bits, state.get_stack_offset(dest_ptr))
-            if sp_offset.offset is None:
-                continue
             
-            # Create memory location for destination string
-            memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+            if sp_offset.offset is not None:
+                # Stack-based pointer - use normal stack offset logic
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+            else:
+                # Heap-based pointer (from VirtualAlloc/HeapAlloc) - use generic memory location
+                # Use a fixed offset for heap pointers to ensure memory dependencies are created
+                heap_offset = SpOffset(arch.bits, 0x1000)  # Generic heap offset
+                memloc = MemoryLocation(heap_offset, 256, endness=Endness.BE)
             
-            # Create symbolic string data (preserves taint)
-            string_bvs = claripy.BVS(
-                f"{stored_func.name}(copied_string)@0x{stored_func.code_loc.ins_addr:x}",
-                memloc.size * 8
-            )
-            string_bvs.variables = frozenset(set(string_bvs.variables) | {"TOP"})
-            
-            # Create memory dependency
             mv = MultiValues(string_bvs)
             stored_func.depends(memloc, *stored_func.atoms, value=mv)
         
-        # Track string operation
+        # Track string operation in fd_tracker
         if stored_func.name not in self.fd_tracker:
             self.fd_tracker[stored_func.name] = []
         
@@ -313,6 +372,7 @@ class WinHandlers(HandlerBase):
         
         # Return destination pointer
         return True, state, dest_ptrs
+
 
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
@@ -401,21 +461,24 @@ class WinHandlers(HandlerBase):
         dest_ptrs = Utils.get_values_from_cc_arg(dest_arg, state, arch)
         src_ptrs = Utils.get_values_from_cc_arg(src_arg, state, arch)
         
-        # Create symbolic data for string concatenation (preserves taint from both strings)
+        # Create symbolic data for string concatenation (UNCONDITIONALLY - FIXED)
+        concat_bvs = claripy.BVS(
+            f"{stored_func.name}(concatenated_string)@0x{stored_func.code_loc.ins_addr:x}",
+            512 * 8  # 512 bytes for concatenated string (FIXED - no memloc dependency)
+        )
+        concat_bvs.variables = frozenset(set(concat_bvs.variables) | {"TOP"})
+        
+        # Process memory dependencies for each destination pointer
         for dest_ptr in Utils.get_values_from_multivalues(dest_ptrs):
             sp_offset = SpOffset(arch.bits, state.get_stack_offset(dest_ptr))
-            if sp_offset.offset is None:
-                continue
             
-            # Create memory location for destination string (larger size for concatenation)
-            memloc = MemoryLocation(sp_offset, 512, endness=Endness.BE)  # Larger for concat
-            
-            # Create symbolic string data (represents concatenated result)
-            concat_bvs = claripy.BVS(
-                f"{stored_func.name}(concatenated_string)@0x{stored_func.code_loc.ins_addr:x}",
-                memloc.size * 8
-            )
-            concat_bvs.variables = frozenset(set(concat_bvs.variables) | {"TOP"})
+            if sp_offset.offset is not None:
+                # Stack-based pointer - use normal stack offset logic
+                memloc = MemoryLocation(sp_offset, 512, endness=Endness.BE)  # Larger for concat
+            else:
+                # Heap-based pointer (from VirtualAlloc/HeapAlloc) - FIXED
+                heap_offset = SpOffset(arch.bits, 0x1000)  # Generic heap offset
+                memloc = MemoryLocation(heap_offset, 512, endness=Endness.BE)
             
             # Create memory dependency for concatenated result
             mv = MultiValues(concat_bvs)
@@ -585,14 +648,6 @@ class WinHandlers(HandlerBase):
         success_val = claripy.BVV(0, arch.bits)  # NULL pointer
         return True, state, MultiValues(success_val)
 
-        
-            
-
-        
-            
-
-    
-    
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_CloseHandle(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
@@ -654,10 +709,7 @@ class WinHandlers(HandlerBase):
         # Return success (TRUE)
         return_val = claripy.BVV(1, 32)  # TRUE
         return True, state, MultiValues(return_val)
-
-        
-            
-        
+  
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_GlobalAlloc(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
@@ -913,6 +965,7 @@ class WinHandlers(HandlerBase):
         # Return success (TRUE)
         success_val = claripy.BVV(1, 32)  # BOOL TRUE
         return True, state, MultiValues(success_val)
+    
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_GetCurrentProcess(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
