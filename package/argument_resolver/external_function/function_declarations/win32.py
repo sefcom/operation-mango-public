@@ -63,5 +63,12 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "ShellExecuteA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hwnd
+        SimTypePointer(SimTypeChar()),      # lpOperation
+        SimTypePointer(SimTypeChar()),      # lpFile
+        SimTypePointer(SimTypeChar()),      # lpParameters
+        SimTypePointer(SimTypeChar()),      # lpDirectory
+        SimTypeInt(),                       # nShowCmd
+    ], SimTypePointer(SimTypeInt())),       #Return: HINSTANCE (casts to int ptr)
 }
-
