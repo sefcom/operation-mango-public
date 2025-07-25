@@ -62,6 +62,11 @@ winreg_decls = {
         SimTypePointer(SimTypeChar()),      # lpBuffer  
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
+    
+    "SetEnvironmentVariableA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpName
+        SimTypePointer(SimTypeChar()),      # lpValue
+    ], SimTypeInt()),                       # Return: BOOL (as int)
 
 }
 
