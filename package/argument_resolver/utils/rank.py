@@ -14,6 +14,10 @@ categories = {
     "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "readconsolea"],
     "argv": ["argv", "getcommandlinea"],
     "network": ["socket", "accept", "recv", "nflog_get_payload"],
+    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue"],
+    "file": ["fopen", "read", "open", "fread", "fgets", "stdin"],
+    "argv": ["argv"],
+    "network": ["socket", "accept", "recv", "nflog_get_payload", "acceptex"],
     "unknown": ["unknown"],
 }
 

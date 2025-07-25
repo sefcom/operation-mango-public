@@ -992,3 +992,85 @@ class WinHandlers(HandlerBase):
 
         # Return success with appropriate return value
         return True, state, MultiValues(process_handle)
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_AcceptEx(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Accepts a new connection, returns the local and remote address, 
+        and receives the first block of data sent by the client application.
+        C++
+            BOOL AcceptEx(
+                [in]  SOCKET       sListenSocket,
+                [in]  SOCKET       sAcceptSocket,
+                [in]  PVOID        lpOutputBuffer,
+                [in]  DWORD        dwReceiveDataLength,
+                [in]  DWORD        dwLocalAddressLength,
+                [in]  DWORD        dwRemoteAddressLength,
+                [out] LPDWORD      lpdwBytesReceived,
+                [in]  LPOVERLAPPED lpOverlapped
+            );
+            
+        :param stored_func:
+        :param state:
+        """
+        self.log.debug("RDA: AcceptEx, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("AcceptEx")
+        
+        listen_socket = cc.get_next_arg()   # SOCKET sListenSocket
+        accept_socket = cc.get_next_arg()   # SOCKET sAcceptSocket
+        output_buffer = cc.get_next_arg()   # PVOID  lpOutputBuffer
+        recv_data_length = cc.get_next_arg()   # DWORD  dwReceiveDataLength
+        local_addr_length = cc.get_next_arg()   # DWORD  dwLocalAddressLength
+        remote_addr_length = cc.get_next_arg()   # DWORD  dwRemoteAddressLength
+        bytes_received = cc.get_next_arg()   # LPDWORD lpdwBytesReceived
+        overlapped = cc.get_next_arg()   # LPOVERLAPPED lpOverlapped
+
+        listen_socket_vals      = Utils.get_values_from_cc_arg(listen_socket, state, arch)
+        accept_socket_vals      = Utils.get_values_from_cc_arg(accept_socket, state, arch)
+        output_buffer_ptrs      = Utils.get_values_from_cc_arg(output_buffer, state, arch)
+        recv_data_lengths       = Utils.get_values_from_cc_arg(recv_data_length, state, arch)
+        local_addr_lengths      = Utils.get_values_from_cc_arg(local_addr_length, state, arch)
+        remote_addr_lengths     = Utils.get_values_from_cc_arg(remote_addr_length, state, arch)
+        bytes_received_ptrs     = Utils.get_values_from_cc_arg(bytes_received, state, arch)
+        overlapped_ptrs         = Utils.get_values_from_cc_arg(overlapped, state, arch)
+
+        # MANDATORY nested loops over buffer ptr and each length
+        for ptr in Utils.get_values_from_multivalues(output_buffer_ptrs):
+            for recv_val in Utils.get_values_from_multivalues(recv_data_lengths):
+                for local_val in Utils.get_values_from_multivalues(local_addr_lengths):
+                    for remote_val in Utils.get_values_from_multivalues(remote_addr_lengths):
+                        sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                        if sp_offset.offset is None:
+                            continue
+
+                        # concrete‐check pattern
+                        if recv_val.concrete and local_val.concrete and remote_val.concrete:
+                            total = (recv_val.concrete_value
+                                     + local_val.concrete_value
+                                     + remote_val.concrete_value)
+                            size = min(total, self.MAX_READ_SIZE)
+                            memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                        else:
+                            memloc = MemoryLocation(sp_offset, state.arch.bytes, endness=Endness.BE)
+
+                        buf_bvs = claripy.BVS(
+                            f"{stored_func.name}(output)@0x{stored_func.code_loc.ins_addr:x}",
+                            memloc.size * 8
+                        )
+                        buf_bvs.variables = frozenset(set(buf_bvs.variables) | {"TOP"})
+
+                        if stored_func.name not in self.fd_tracker:
+                            self.fd_tracker[stored_func.name] = []
+                        self.fd_tracker[stored_func.name].append({
+                            "val":      buf_bvs,
+                            "parent":   [],
+                            "ins_addr": stored_func.code_loc.ins_addr
+                        })
+
+                        mv = MultiValues(buf_bvs)
+                        stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return success (BOOL = 1)
+        return True, state, MultiValues(claripy.BVV(1, 32))
