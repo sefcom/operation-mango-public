@@ -127,5 +127,7 @@ winreg_decls = {
         SimTypeInt(signed=False),           # dwFreeType - free type flags
     ], SimTypeInt()),                       # Returns: BOOL
     
+    "GetCurrentProcess": SimTypeFunction([
+    ], SimTypePointer(SimTypeBottom)),
 }
 
