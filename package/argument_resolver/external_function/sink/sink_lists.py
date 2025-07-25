@@ -102,6 +102,8 @@ SETTER_SINKS: List[Sink] = [
     Sink(name="PTI_nvram_set", vulnerable_parameters=[2]),
 ]
 
+SETTER_SINKS.append(Sink(name="SetEnvironmentVariableA", vulnerable_parameters=[1, 2]))
+
 ENV_SINKS: List[Sink] = GETTER_SINKS + SETTER_SINKS
 
 #WIN32_PROCESS_SINKS: List[Sink] = [

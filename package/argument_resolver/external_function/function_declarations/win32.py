@@ -65,7 +65,12 @@ winreg_decls = {
     
     "GetStdHandle": SimTypeFunction([
         SimTypeInt(),                      # nStdHandle (DWORD)
-    ], SimTypePointer(SimTypeBottom())),   # Returns HANDLE
+    ], SimTypePointer(SimTypeBottom())),# Returns HANDLE
+    
+    "SetEnvironmentVariableA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpName
+        SimTypePointer(SimTypeChar()),      # lpValue
+    ], SimTypeInt()),                       # Return: BOOL (as int)
 
     "CloseHandle": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hObject (HANDLE)

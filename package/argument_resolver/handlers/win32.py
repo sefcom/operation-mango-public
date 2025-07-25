@@ -267,7 +267,7 @@ class WinHandlers(HandlerBase):
     #     :param state: Register and memory definitions and uses
     #     """
     #     self.log.debug("RDA: lstrcpyA, ins_addr=%#x", stored_func.code_loc.ins_addr)
-        
+    
     #     arch = state.arch
     #     cc = self._calling_convention_resolver.get_cc("lstrcpyA")
         
@@ -308,6 +308,54 @@ class WinHandlers(HandlerBase):
         
     #     # Return destination pointer
     #     return True, state, dest_ptrs
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_SetEnvironmentVariableA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Handle SetEnvironmentVariableA - Environment Variable Sink
+        BOOL SetEnvironmentVariableA(
+            [in, optional] LPCSTR lpName,
+            [in, optional] LPCSTR lpValue
+        );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: SetEnvironmentVariableA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("SetEnvironmentVariableA")
+
+        # Extract parameters
+        env_name = cc.get_next_arg()      # lpName
+        env_value = cc.get_next_arg()     # lpValue
+
+        # Get pointers for both parameters
+        name_ptrs = Utils.get_values_from_cc_arg(env_name, state, arch)
+        value_ptrs = Utils.get_values_from_cc_arg(env_value, state, arch)
+
+        # Mark both as sink dependencies (FIXED for heap pointers)
+        for ptr in Utils.get_values_from_multivalues(name_ptrs):
+            sp_offset = SpOffset(state.arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                # Stack-based pointer
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+            else:
+                # Heap-based pointer (from VirtualAlloc/HeapAlloc)
+                heap_offset = SpOffset(arch.bits, 0x1000)
+                memloc = MemoryLocation(heap_offset, 256, endness=Endness.BE)
+            stored_func.depends(memloc, *stored_func.atoms)
+
+        for ptr in Utils.get_values_from_multivalues(value_ptrs):
+            sp_offset = SpOffset(state.arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                # Stack-based pointer
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+            else:
+                # Heap-based pointer (from VirtualAlloc/HeapAlloc)
+                heap_offset = SpOffset(arch.bits, 0x1000)
+                memloc = MemoryLocation(heap_offset, 256, endness=Endness.BE)
+            stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(1, 32))
     
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
