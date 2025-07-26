@@ -63,5 +63,11 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "InternetWriteFile": SimTypeFunction([
+        SimTypeInt(),                     # HINTERNET hFile
+        SimTypePointer(SimTypeBottom()),  # LPCVOID   lpBuffer
+        SimTypeInt(),                     # DWORD     dwNumberOfBytesToWrite
+        SimTypePointer(SimTypeInt()),     # LPDWORD   lpdwNumberOfBytesWritten
+    ], SimTypeInt()),                     # Return: BOOL
 }
 
