@@ -63,5 +63,11 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
+    "FindFirstFileA": SimTypeFunction([
+        SimTypePointer(SimTypeChar(), label="LPCSTR"),           # lpFileName
+        SimTypePointer(SimTypeBottom(), label="LPWIN32_FIND_DATAA"),  # lpFindFileData
+    ], SimTypePointer(SimTypeBottom(), label="HANDLE"))          # Return
+
+
 }
 

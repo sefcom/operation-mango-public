@@ -252,5 +252,62 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
-        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_FindFirstFileA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Searches a directory for a file or subdirectory with a name that matches a specific name (pattern).
+        C++
+            HANDLE FindFirstFileA(
+                [in]  LPCSTR             lpFileName,
+                [out] LPWIN32_FIND_DATAA lpFindFileData
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: FindFirstFileA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("FindFirstFileA")
+
+        lpFileName = cc.get_next_arg()      # LPCSTR lpFileName (input, not tainted)
+        lpFindFileData = cc.get_next_arg()  # LPWIN32_FIND_DATAA lpFindFileData (output buffer)
+
+        buf_ptrs = Utils.get_values_from_cc_arg(lpFindFileData, state, arch)
+        # WIN32_FIND_DATAA is a struct, typically 320 bytes (can adjust as needed)
+        size_values = [claripy.BVV(320, arch.bits)]  # Use a fixed struct size for the output
+
+        for ptr in Utils.get_values_from_multivalues(buf_ptrs):
+            for count_val in size_values:
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is None:
+                    continue
+
+                if count_val.concrete:
+                    size = min(count_val.concrete_value, self.MAX_READ_SIZE)
+                    memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                else:
+                    memloc = MemoryLocation(sp_offset, arch.bytes, endness=Endness.BE)
+
+                buf_bvs = claripy.BVS(
+                    f"{stored_func.name}(find_data)@0x{stored_func.code_loc.ins_addr:x}",
+                    memloc.size * 8
+                )
+                buf_bvs.variables = frozenset(set(buf_bvs.variables) | {"TOP"})
+
+                if stored_func.name not in self.fd_tracker:
+                    self.fd_tracker[stored_func.name] = []
+                self.fd_tracker[stored_func.name].append({
+                    "val": buf_bvs,
+                    "parent": [],
+                    "ins_addr": stored_func.code_loc.ins_addr
+                })
+
+                mv = MultiValues(buf_bvs)
+                stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return a symbolic handle (as in other handle-returning sources)
+        return_value = claripy.BVS(f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}", arch.bits)
+        return True, state, MultiValues(return_value)
+    
 
