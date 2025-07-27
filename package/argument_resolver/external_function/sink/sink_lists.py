@@ -44,7 +44,11 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
     Sink(name="pegaSystem", vulnerable_parameters=[1]),
     Sink(name="CreateProcessA", vulnerable_parameters=[2]), #[1,2]  # lpApplicationName, lpCommandLine
     Sink(name="CreateFileA", vulnerable_parameters=[1]), # [1] lpFileName
-    Sink(name="InternetWriteFile", vulnerable_parameters=[2]) # [2] lpBuffer
+    Sink(name="InternetWriteFile", vulnerable_parameters=[2]),
+
+]
+
+NETWORK_WRITE_SINKS: List[Sink] = [
 ]
 
 PATH_TRAVERSAL_SINKS: List[Sink] = [
