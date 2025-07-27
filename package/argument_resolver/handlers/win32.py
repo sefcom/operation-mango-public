@@ -1252,5 +1252,72 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(32, 32)  # Typical string length
         return True, state, MultiValues(return_val)
 
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_ReadProcessMemory(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Reads data from an area of memory in a specified process.
+        C++
+            BOOL ReadProcessMemory(
+                [in]  HANDLE  hProcess,
+                [in]  LPCVOID lpBaseAddress,
+                [out] LPVOID  lpBuffer,
+                [in]  SIZE_T  nSize,
+                [out] SIZE_T  *lpNumberOfBytesRead
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: ReadProcessMemory, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("ReadProcessMemory")
+
+        # Extract all parameters in correct order
+        hProcess = cc.get_next_arg()           # HANDLE hProcess
+        lpBaseAddress = cc.get_next_arg()      # LPCVOID lpBaseAddress  
+        lpBuffer = cc.get_next_arg()           # LPVOID lpBuffer (output - source data)
+        nSize = cc.get_next_arg()              # SIZE_T nSize
+        lpNumberOfBytesRead = cc.get_next_arg() # SIZE_T* lpNumberOfBytesRead (output)
+
+        # Get values for buffer and size (main source concern)
+        buf_ptrs = Utils.get_values_from_cc_arg(lpBuffer, state, arch)
+        size_values = Utils.get_values_from_cc_arg(nSize, state, arch)
+
+        # Create symbolic data for process memory content
+        proc_mem_bvs = claripy.BVS(
+            f"{stored_func.name}(proc_memory)@0x{stored_func.code_loc.ins_addr:x}",
+            4096 * 8  # Default size for process memory
+        )
+        proc_mem_bvs.variables = frozenset(set(proc_mem_bvs.variables) | {"TOP"})
+
+        # Track in fd_tracker (for sources)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        self.fd_tracker[stored_func.name].append({
+            "val": proc_mem_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+
+        # Create memory dependencies for buffer
+        for ptr in Utils.get_values_from_multivalues(buf_ptrs):
+            for size_val in Utils.get_values_from_multivalues(size_values):
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is not None:
+                    if size_val.concrete:
+                        size = min(size_val.concrete_value, self.MAX_READ_SIZE)
+                        memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                    else:
+                        memloc = MemoryLocation(sp_offset, arch.bytes, endness=Endness.BE)
+
+                    # Create dependency
+                    mv = MultiValues(proc_mem_bvs)
+                    stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return BOOL success
+        return True, state, MultiValues(claripy.BVV(1, 32))
         
         
