@@ -1371,4 +1371,37 @@ class WinHandlers(HandlerBase):
         
         # The handle itself carries the taint of clipboard content
         return True, state, handle_mv
+    
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_ShellExecuteA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Handle ShellExecuteA - Process Execution Sink"""
+        self.log.debug("RDA: ShellExecuteA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("ShellExecuteA")
+
+        # Extract parameters (full signature)
+        hwnd        = cc.get_next_arg()   # HWND hwnd (optional)
+        lpOperation = cc.get_next_arg()   # LPCSTR lpOperation (optional)
+        lpFile      = cc.get_next_arg()   # LPCSTR lpFile (executable path)
+        lpParameters= cc.get_next_arg()   # LPCSTR lpParameters (command line params, optional)
+        lpDirectory = cc.get_next_arg()   # LPCSTR lpDirectory (optional)
+        nShowCmd    = cc.get_next_arg()   # INT nShowCmd
+
+        # Extract pointers for sink dependency tracking
+        file_ptrs = Utils.get_values_from_cc_arg(lpFile, state, arch)
+        # params_ptrs = Utils.get_values_from_cc_arg(lpParameters, state, arch)
+
+        # Track dependencies on lpFile pointer
+        for ptr in Utils.get_values_from_multivalues(file_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+
+        # Return success
+        return True, state, MultiValues(claripy.BVV(1, 32))
+
         

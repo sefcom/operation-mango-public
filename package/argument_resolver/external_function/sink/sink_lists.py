@@ -114,4 +114,5 @@ ENV_SINKS: List[Sink] = GETTER_SINKS + SETTER_SINKS
     # Sink(name="ShellExecuteA", vulnerable_parameters=[3, 4]),  # lpFile, lpParameters
 #]
 
+COMMAND_INJECTION_SINKS.append(Sink(name="ShellExecuteA", vulnerable_parameters=[3]))
 
