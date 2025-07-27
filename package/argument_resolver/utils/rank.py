@@ -11,12 +11,8 @@ tag_values = {
 
 categories = {
     "env": ["env", "getenv", "nvram", "frontend_param", "getvalue", "getenvironmentvariablea"],
-    "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "readconsolea","getmodulefilenamea" ],
+    "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "readconsolea","getmodulefilenamea","findfirstfilea" ],
     "argv": ["argv", "getcommandlinea"],
-    "network": ["socket", "accept", "recv", "nflog_get_payload"],
-    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue"],
-    "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "findfirstfilea"],
-    "argv": ["argv"],
     "network": ["socket", "accept", "recv", "nflog_get_payload", "acceptex"],
     "unknown": ["unknown"],
 }
