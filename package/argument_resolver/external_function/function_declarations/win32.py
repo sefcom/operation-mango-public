@@ -154,7 +154,14 @@ winreg_decls = {
     "FindFirstFileA": SimTypeFunction([
         SimTypePointer(SimTypeChar(), label="LPCSTR"),           # lpFileName
         SimTypePointer(SimTypeBottom(), label="LPWIN32_FIND_DATAA"),  # lpFindFileData
-    ], SimTypePointer(SimTypeBottom(), label="HANDLE"))          # Return
+    ], SimTypePointer(SimTypeBottom(), label="HANDLE")),          # Return
+
+    "GetModuleFileNameA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hModule
+        SimTypePointer(SimTypeChar()),      # lpFilename
+        SimTypeInt(),                       # nSize
+    ], SimTypeInt()),                       # Return: DWORD
+
 
 
 }

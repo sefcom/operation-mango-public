@@ -267,7 +267,7 @@ class WinHandlers(HandlerBase):
     
         arch = state.arch
         cc = self._calling_convention_resolver.get_cc("SetEnvironmentVariableA")
-
+    
         # Extract parameters
         env_name = cc.get_next_arg()      # lpName
         env_value = cc.get_next_arg()     # lpValue
@@ -1189,4 +1189,68 @@ class WinHandlers(HandlerBase):
             # Return a symbolic handle (as in other handle-returning sources)
             return_value = claripy.BVS(f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}", arch.bits)
             return True, state, MultiValues(return_value)
+        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_GetModuleFileNameA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Retrieves the fully qualified path for the file that contains the specified module.
+        C++
+            DWORD GetModuleFileNameA(
+                [in, optional]  HMODULE hModule,
+                [out]           LPSTR   lpFilename,
+                [in]            DWORD   nSize
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: GetModuleFileNameA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("GetModuleFileNameA")
+
+        hModule = cc.get_next_arg()      # HMODULE hModule (unused for taint)
+        lpFilename = cc.get_next_arg()   # LPSTR lpFilename (output buffer)
+        nSize = cc.get_next_arg()        # DWORD nSize (buffer size)
+
+        buf_ptrs = Utils.get_values_from_cc_arg(lpFilename, state, arch)
+        size_values = Utils.get_values_from_cc_arg(nSize, state, arch)
+
+        # Step 3c: Create symbolic data (for sources)
+        file_bvs = claripy.BVS(
+            f"{stored_func.name}(file_path)@0x{stored_func.code_loc.ins_addr:x}",
+            256 * 8  # 256 bytes for file path
+        )
+        file_bvs.variables = frozenset(set(file_bvs.variables) | {"TOP"})
+
+        # Step 3d: Track in fd_tracker (for sources)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        self.fd_tracker[stored_func.name].append({
+            "val": file_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+
+        # Step 3e: Create memory dependencies for buffer
+        for ptr in Utils.get_values_from_multivalues(buf_ptrs):
+            for size_val in Utils.get_values_from_multivalues(size_values):
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is not None:
+                    if size_val.concrete:
+                        size = min(size_val.concrete_value, self.MAX_READ_SIZE)
+                        memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                    else:
+                        memloc = MemoryLocation(sp_offset, arch.bytes, endness=Endness.BE)
+
+                    # Create dependency
+                    mv = MultiValues(file_bvs)
+                    stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Step 3f: Return success with symbolic return value (simulate string length)
+        return_val = claripy.BVV(32, 32)  # Typical string length
+        return True, state, MultiValues(return_val)
+
+        
         

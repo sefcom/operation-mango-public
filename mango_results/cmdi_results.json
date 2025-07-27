@@ -3,15 +3,26 @@
         {
             "trace": [
                 {
+<<<<<<< HEAD
                     "function": "sub_140007ca8",
                     "string": "sub_140007ca8(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007ca8",
                     "ins_addr": "0x140007ca8"
+=======
+                    "function": "sub_140007bb0",
+                    "string": "sub_140007bb0(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                    "ins_addr": "0x140007bb0"
+>>>>>>> origin/win32-GetModuleFileNameA
                 }
             ],
             "sink": {
                 "function": "CreateProcessA",
+<<<<<<< HEAD
                 "string": "CreateProcessA(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007ca8",
                 "ins_addr": "0x140007ca8"
+=======
+                "string": "CreateProcessA(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                "ins_addr": "0x140007bb0"
+>>>>>>> origin/win32-GetModuleFileNameA
             },
             "depth": 1,
             "inputs": {
@@ -31,14 +42,23 @@
             "trace": [
                 {
                     "function": "sub_140001480",
+<<<<<<< HEAD
                     "string": "sub_140001480(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140001480",
+=======
+                    "string": "sub_140001480(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140001480",
+>>>>>>> origin/win32-GetModuleFileNameA
                     "ins_addr": "0x140001480"
                 }
             ],
             "sink": {
                 "function": "CreateProcessA",
+<<<<<<< HEAD
                 "string": "CreateProcessA(<MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x370>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x3e0>)>, <MultiValues(<BV64 stack_base - 0x400>)>) @ 0x140001585",
                 "ins_addr": "0x140001585"
+=======
+                "string": "CreateProcessA(<MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x120>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x190>)>, <MultiValues(<BV64 stack_base - 0x1b0>)>) @ 0x14000152c",
+                "ins_addr": "0x14000152c"
+>>>>>>> origin/win32-GetModuleFileNameA
             },
             "depth": 1,
             "inputs": {
@@ -57,15 +77,26 @@
         {
             "trace": [
                 {
+<<<<<<< HEAD
                     "function": "sub_140007ca8",
                     "string": "sub_140007ca8(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007ca8",
                     "ins_addr": "0x140007ca8"
+=======
+                    "function": "sub_140007bb0",
+                    "string": "sub_140007bb0(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                    "ins_addr": "0x140007bb0"
+>>>>>>> origin/win32-GetModuleFileNameA
                 }
             ],
             "sink": {
                 "function": "CreateProcessA",
+<<<<<<< HEAD
                 "string": "CreateProcessA(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007ca8",
                 "ins_addr": "0x140007ca8"
+=======
+                "string": "CreateProcessA(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                "ins_addr": "0x140007bb0"
+>>>>>>> origin/win32-GetModuleFileNameA
             },
             "depth": 1,
             "inputs": {
@@ -85,20 +116,87 @@
             "trace": [
                 {
                     "function": "sub_140001480",
+<<<<<<< HEAD
                     "string": "sub_140001480(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140001480",
+=======
+                    "string": "sub_140001480(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140001480",
+>>>>>>> origin/win32-GetModuleFileNameA
                     "ins_addr": "0x140001480"
                 }
             ],
             "sink": {
                 "function": "CreateProcessA",
+<<<<<<< HEAD
                 "string": "CreateProcessA(<MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x370>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x3e0>)>, <MultiValues(<BV64 stack_base - 0x400>)>) @ 0x140001585",
                 "ins_addr": "0x140001585"
+=======
+                "string": "CreateProcessA(<MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x120>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x190>)>, <MultiValues(<BV64 stack_base - 0x1b0>)>) @ 0x14000152c",
+                "ins_addr": "0x14000152c"
+            },
+            "depth": 1,
+            "inputs": {
+                "likely": [],
+                "possibly": [],
+                "tags": [
+                    "likely",
+                    "possibly"
+                ],
+                "valid_funcs": []
+            },
+            "rank": 0,
+            "reachable_from_main": false,
+            "sanitized": false
+        },
+        {
+            "trace": [
+                {
+                    "function": "sub_140007bb0",
+                    "string": "sub_140007bb0(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                    "ins_addr": "0x140007bb0"
+                }
+            ],
+            "sink": {
+                "function": "CreateProcessA",
+                "string": "CreateProcessA(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV32 TOP[31:0]>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140007bb0",
+                "ins_addr": "0x140007bb0"
+            },
+            "depth": 1,
+            "inputs": {
+                "likely": [],
+                "possibly": [],
+                "tags": [
+                    "likely",
+                    "possibly"
+                ],
+                "valid_funcs": []
+            },
+            "rank": 0,
+            "reachable_from_main": false,
+            "sanitized": false
+        },
+        {
+            "trace": [
+                {
+                    "function": "sub_140001480",
+                    "string": "sub_140001480(<MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>, <MultiValues(<BV64 TOP>)>) @ 0x140001480",
+                    "ins_addr": "0x140001480"
+                }
+            ],
+            "sink": {
+                "function": "CreateProcessA",
+                "string": "CreateProcessA(<MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x120>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV32 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 0x0>)>, <MultiValues(<BV64 stack_base - 0x190>)>, <MultiValues(<BV64 stack_base - 0x1b0>)>) @ 0x14000152c",
+                "ins_addr": "0x14000152c"
+>>>>>>> origin/win32-GetModuleFileNameA
             },
             "depth": 1,
             "inputs": {
                 "likely": [],
                 "possibly": [
+<<<<<<< HEAD
                     "FindFirstFileA(find_dat"
+=======
+                    "GetModuleFileNameA(file_pat"
+>>>>>>> origin/win32-GetModuleFileNameA
                 ],
                 "tags": [
                     "likely",
@@ -106,11 +204,16 @@
                 ],
                 "valid_funcs": []
             },
+<<<<<<< HEAD
             "rank": 0,
+=======
+            "rank": 0.7,
+>>>>>>> origin/win32-GetModuleFileNameA
             "reachable_from_main": false,
             "sanitized": false
         }
     ],
+<<<<<<< HEAD
     "cfg_time": 3.506437063217163,
     "vra_time": 12.655954360961914,
     "path": "/home/carde/insure_operation-mango/test_FindFirstFileA_program.exe",
@@ -122,10 +225,24 @@
     },
     "error": null,
     "mango_time": 11.82997989654541,
+=======
+    "cfg_time": 3.165318727493286,
+    "vra_time": 11.415916442871094,
+    "path": "/home/carde/insure_operation-mango/test_GetModuleFileNameA_program.exe",
+    "name": "test_GetModuleFileNameA_program.exe",
+    "has_sinks": true,
+    "sha256": "4c769344e497c3eb20177fe08642d37224a06596a16f33dfb05b932b410a5c41",
+    "sink_times": {
+        "CreateProcessA": 0.569678783416748
+    },
+    "error": null,
+    "mango_time": 0.8184571266174316,
+>>>>>>> origin/win32-GetModuleFileNameA
     "sinks": {
         "CreateProcessA": 2
     },
     "time_data": {
+<<<<<<< HEAD
         "0x140007ca8 -> 0x140100000": {
             "taint_time": 0.03367495536804199,
             "rda_time": 0.0909888744354248
@@ -133,6 +250,15 @@
         "0x140001480 -> 0x140100000": {
             "taint_time": 4.4865641593933105,
             "rda_time": 5.849454164505005
+=======
+        "0x140007bb0 -> 0x140100000": {
+            "taint_time": 0.03728008270263672,
+            "rda_time": 0.0915975570678711
+        },
+        "0x140001480 -> 0x140100000": {
+            "taint_time": 0.10133981704711914,
+            "rda_time": 0.09207272529602051
+>>>>>>> origin/win32-GetModuleFileNameA
         }
     }
 }
