@@ -10,7 +10,7 @@ tag_values = {
 }
 
 categories = {
-    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue"],
+    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue", "readprocessmemory"],
     "file": ["fopen", "read", "open", "fread", "fgets", "stdin"],
     "argv": ["argv"],
     "network": ["socket", "accept", "recv", "nflog_get_payload"],
