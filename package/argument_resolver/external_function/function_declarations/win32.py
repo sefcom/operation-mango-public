@@ -171,5 +171,8 @@ winreg_decls = {
         SimTypeLong(signed=False),         # nSize
         SimTypePointer(SimTypeLong(signed=False)),     # lpNumberOfBytesRead
     ], SimTypeInt(signed=False)), 
+    "GetClipboardData": SimTypeFunction([
+        SimTypeInt(),                       # uFormat
+    ], SimTypePointer(SimTypeBottom())),      # Returns HANDLE
 }
 
