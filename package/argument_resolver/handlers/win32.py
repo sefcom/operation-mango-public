@@ -252,34 +252,36 @@ class WinHandlers(HandlerBase):
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
     
+
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_GetClipboardData(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
         """
-        Handle GetClipboardData: Retrieves data from the clipboard in a specified format. The clipboard must have been opened previously.
+        Handle GetClipboardData: Retrieves data from the clipboard in a specified format.
         C++
-        HANDLE GetClipboardData(
-        [in] UINT uFormat
-        );
-
+            HANDLE GetClipboardData(
+                [in] UINT uFormat
+            );
         :param stored_func:
         :param state: Register and memory definitions and uses
         """
-
         self.log.debug("RDA: GetClipboardData, ins_addr=%#x", stored_func.code_loc.ins_addr)
         
         arch = state.arch
         cc = self._calling_convention_resolver.get_cc("GetClipboardData")
 
-        clipboard_format = cc.get_next_arg()    #uFormat
-        format_ptr = Utils.get_values_from_cc_arg(clipboard_format, state, arch)
+        # Extract parameter
+        clipboard_format = cc.get_next_arg()    # uFormat
+        format_vals = Utils.get_values_from_cc_arg(clipboard_format, state, arch)
 
+        # Create symbolic data for clipboard content (the actual source data)
         clipboard_data = claripy.BVS(
-            f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}",
-            arch.bits
+            f"{stored_func.name}(clipboard_content)@0x{stored_func.code_loc.ins_addr:x}",
+            4096 * 8  # 4KB for clipboard data
         )
         clipboard_data.variables = frozenset(set(clipboard_data.variables) | {"TOP"})
 
+        # Track in fd_tracker (for sources)
         if stored_func.name not in self.fd_tracker:
             self.fd_tracker[stored_func.name] = []
 
@@ -289,4 +291,17 @@ class WinHandlers(HandlerBase):
             "ins_addr": stored_func.code_loc.ins_addr
         })
 
-        return True, state, MultiValues(clipboard_data)
+        # Create a handle that represents access to the clipboard data
+        clipboard_handle = claripy.BVS(
+            f"{stored_func.name}_handle@{stored_func.code_loc.ins_addr:x}",
+            arch.bits
+        )
+        clipboard_handle.variables = frozenset(set(clipboard_handle.variables) | {"TOP"})
+
+        # Model that accessing this handle provides clipboard data
+        # This creates a symbolic relationship between handle and data
+        handle_mv = MultiValues(clipboard_handle)
+        
+        # The handle itself carries the taint of clipboard content
+        return True, state, handle_mv
+
