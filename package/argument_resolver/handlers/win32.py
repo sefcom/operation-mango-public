@@ -1074,3 +1074,60 @@ class WinHandlers(HandlerBase):
 
         # Return success (BOOL = 1)
         return True, state, MultiValues(claripy.BVV(1, 32))
+##############################################################################################################################
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_InternetWriteFile(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """Writes data to an open Internet file.
+        C++
+            BOOL InternetWriteFile(
+                [in]  HINTERNET hFile,
+                [in]  LPCVOID   lpBuffer,
+                [in]  DWORD     dwNumberOfBytesToWrite,
+                [out] LPDWORD   lpdwNumberOfBytesWritten
+            );
+            
+        :param stored_func:
+        :param state:
+        """
+        self.log.debug("RDA: InternetWriteFile, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("InternetWriteFile")
+
+        hFile = cc.get_next_arg()  # HINTERNET hFile
+        buffer = cc.get_next_arg()  # LPCVOID   lpBuffer
+        dwNumberOfBytesToWrite = cc.get_next_arg()  # DWORD     dwNumberOfBytesToWrite
+        lpdwBytesWritten = cc.get_next_arg()  # LPDWORD   lpdwNumberOfBytesWritten
+
+        file_handle_vals = Utils.get_values_from_cc_arg(hFile, state, arch)
+        buffer_ptrs = Utils.get_values_from_cc_arg(buffer, state, arch)
+        write_len_vals = Utils.get_values_from_cc_arg(dwNumberOfBytesToWrite, state, arch)
+        bytes_written_ptrs = Utils.get_values_from_cc_arg(lpdwBytesWritten, state, arch)
+
+                # MANDATORY: nested loops for buffer pointer + length
+        for ptr in Utils.get_values_from_multivalues(buffer_ptrs):
+            for count_val in Utils.get_values_from_multivalues(write_len_vals):
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is None:
+                    continue
+
+                # concrete‐check pattern
+                if count_val.concrete:
+                    size = min(count_val.concrete_value, self.MAX_READ_SIZE)
+                    memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                else:
+                    memloc = MemoryLocation(sp_offset, state.arch.bytes, endness=Endness.BE)
+
+                # NO fd_tracker for sinks—just record the dependency
+                stored_func.depends(memloc, *stored_func.atoms)
+
+        # Also track the out‐param bytes‐written pointer
+        for ptr in Utils.get_values_from_multivalues(bytes_written_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, state.arch.bytes, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+
+        # Return success BOOL = 1
+        return True, state, MultiValues(claripy.BVV(1, 32))

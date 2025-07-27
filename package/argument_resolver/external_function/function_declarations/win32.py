@@ -145,6 +145,11 @@ winreg_decls = {
         SimTypePointer(SimTypeBottom()),    # LPOVERLAPPED lpOverlapped
     ], SimTypeInt()),                       # Return: BOOL
 
-
+    "InternetWriteFile": SimTypeFunction([
+        SimTypeInt(),                     # HINTERNET hFile
+        SimTypePointer(SimTypeBottom()),  # LPCVOID   lpBuffer
+        SimTypeInt(),                     # DWORD     dwNumberOfBytesToWrite
+        SimTypePointer(SimTypeInt()),     # LPDWORD   lpdwNumberOfBytesWritten
+    ], SimTypeInt()),                     # Return: BOOL
 }
 
