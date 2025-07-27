@@ -151,5 +151,11 @@ winreg_decls = {
         SimTypeInt(),                     # DWORD     dwNumberOfBytesToWrite
         SimTypePointer(SimTypeInt()),     # LPDWORD   lpdwNumberOfBytesWritten
     ], SimTypeInt()),                     # Return: BOOL
+    "FindFirstFileA": SimTypeFunction([
+        SimTypePointer(SimTypeChar(), label="LPCSTR"),           # lpFileName
+        SimTypePointer(SimTypeBottom(), label="LPWIN32_FIND_DATAA"),  # lpFindFileData
+    ], SimTypePointer(SimTypeBottom(), label="HANDLE"))          # Return
+
+
 }
 
