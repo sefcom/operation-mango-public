@@ -48,9 +48,6 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
 
 ]
 
-NETWORK_WRITE_SINKS: List[Sink] = [
-]
-
 PATH_TRAVERSAL_SINKS: List[Sink] = [
     Sink(name="popen", vulnerable_parameters=[1]),
     Sink(name="fopen", vulnerable_parameters=[1]),
