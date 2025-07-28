@@ -133,7 +133,7 @@ winreg_decls = {
     ], SimTypeInt()),                       # Returns: BOOL
     
     "GetCurrentProcess": SimTypeFunction([
-    ], SimTypePointer(SimTypeBottom)),
+    ], SimTypePointer(SimTypeBottom())),
     "AcceptEx": SimTypeFunction([
         SimTypeInt(),                       # SOCKET       sListenSocket
         SimTypeInt(),                       # SOCKET       sAcceptSocket
@@ -182,4 +182,12 @@ winreg_decls = {
         SimTypePointer(SimTypeChar()),      # lpDirectory
         SimTypeInt(),                       # nShowCmd
     ], SimTypePointer(SimTypeInt())),       #Return: HINSTANCE (casts to int ptr)
+    "RegQueryValueExA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpReserved
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpType
+        SimTypePointer(SimTypeBottom()),    # LPBYTE lpData
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpcbData
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS (LONG)
 }

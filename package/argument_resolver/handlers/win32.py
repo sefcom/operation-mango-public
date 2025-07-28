@@ -15,7 +15,7 @@ import claripy
 
 
 class WinHandlers(HandlerBase):
-
+    
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
     def handle_ReadConsoleA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
@@ -251,6 +251,79 @@ class WinHandlers(HandlerBase):
         # Step 3f: Return success with symbolic return value
         return_val = claripy.BVV(len("dummy_env_value"), 32)  # Simulate string length
         return True, state, MultiValues(return_val)
+        
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegQueryValueExA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Retrieves the type and data for the specified value name associated with an open registry key.
+
+        Signature:
+        #   LSTATUS RegQueryValueExA(
+        #       HKEY    hKey,
+        #       LPCSTR  lpValueName,
+        #       LPDWORD lpReserved,
+        #       LPDWORD lpType,
+        #       LPBYTE  lpData,
+        #       LPDWORD lpcbData
+        #   )
+
+        :param stored_func: Function call information and location
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegQueryValueExA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegQueryValueExA")
+
+        hKey = cc.get_next_arg()         # HKEY hKey
+        lpValueName = cc.get_next_arg()  # LPCSTR lpValueName
+        lpReserved = cc.get_next_arg()   # LPDWORD lpReserved (must be NULL)
+        lpType = cc.get_next_arg()       # LPDWORD lpType (output, can be NULL)
+        lpData = cc.get_next_arg()       # LPBYTE lpData (output buffer)
+        lpcbData = cc.get_next_arg()     # LPDWORD lpcbData (pointer to buffer size)
+
+        hKey_ptr = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpValueName_ptr = Utils.get_values_from_cc_arg(lpValueName, state, arch)
+        lpReserved_ptr = Utils.get_values_from_cc_arg(lpReserved, state, arch)
+        lpType_ptr = Utils.get_values_from_cc_arg(lpType, state, arch)
+        lpData_ptr = Utils.get_values_from_cc_arg(lpData, state, arch)
+        lpcbData_ptr = Utils.get_values_from_cc_arg(lpcbData, state, arch)
+
+        # Create symbolic data for registry value
+        reg_bvs = claripy.BVS(
+            f"{stored_func.name}(reg_value)@0x{stored_func.code_loc.ins_addr:x}",
+            256 * 8  # 256 bytes for registry value
+        )
+        reg_bvs.variables = frozenset(set(reg_bvs.variables) | {"TOP"})
+
+        # Track in fd_tracker (for sources)
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        self.fd_tracker[stored_func.name].append({
+            "val": reg_bvs,
+            "parent": [],
+            "ins_addr": stored_func.code_loc.ins_addr
+        })
+
+        # Propagate symbolic data to lpData buffer (if not NULL)
+        for ptr in Utils.get_values_from_multivalues(lpData_ptr):
+            # Default to 256 bytes if lpcbData is not concrete
+            size = 256
+            for size_ptr in Utils.get_values_from_multivalues(lpcbData_ptr):
+                if hasattr(size_ptr, "concrete") and size_ptr.concrete:
+                    size = min(size_ptr.concrete_value, self.MAX_READ_SIZE)
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, size, endness=Endness.BE)
+                mv = MultiValues(reg_bvs)
+                stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return success (simulate ERROR_SUCCESS)
+        return_val = claripy.BVV(0, 32)
+        return True, state, MultiValues(return_val)
+
     
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
