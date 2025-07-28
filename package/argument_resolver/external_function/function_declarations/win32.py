@@ -190,4 +190,27 @@ winreg_decls = {
        SimTypeInt(),                     # DWORD dwNumberOfBytesToRead
        SimTypePointer(SimTypeInt()),     # LPDWORD lpdwNumberOfBytesRead
    ], SimTypeInt()),                     # Return: BOOL
+    
+    "WSARecv": SimTypeFunction([
+        SimTypeInt(),                           # SOCKET s
+        SimTypePointer(SimTypeBottom()),        # LPWSABUF lpBuffers
+        SimTypeInt(),                           # DWORD dwBufferCount
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpNumberOfBytesRecvd
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpFlags
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED lpOverlapped
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    ], SimTypeInt()),                           # Return: int
+
+    "WSARecvFrom": SimTypeFunction([
+        SimTypeInt(),                           # SOCKET s
+        SimTypePointer(SimTypeBottom()),        # LPWSABUF lpBuffers
+        SimTypeInt(),                           # DWORD dwBufferCount
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpNumberOfBytesRecvd
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpFlags
+        SimTypePointer(SimTypeBottom()),        # struct sockaddr *lpFrom
+        SimTypePointer(SimTypeInt()),           # LPINT lpFromlen
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED lpOverlapped
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    ], SimTypeInt()),                           # Return: int
+
 }

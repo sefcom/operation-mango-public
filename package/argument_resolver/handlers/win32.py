@@ -1468,4 +1468,196 @@ class WinHandlers(HandlerBase):
 
         # Return success BOOL = 1
         return True, state, MultiValues(claripy.BVV(1, 32))
+    
+    
+    
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_WSARecv(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle WSARecv - Windows Asynchronous Socket Receive
+        
+        .. sourcecode:: c
+            int WSARecv(
+                SOCKET s,
+                LPWSABUF lpBuffers,
+                DWORD dwBufferCount,
+                LPDWORD lpNumberOfBytesRecvd,
+                LPDWORD lpFlags,
+                LPWSAOVERLAPPED lpOverlapped,
+                LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+            );
+        """
+        self.log.debug("RDA: WSARecv, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("WSARecv")
+
+        # Extract parameters
+        socket_arg = cc.get_next_arg()          # SOCKET s
+        buffers_arg = cc.get_next_arg()         # LPWSABUF lpBuffers
+        buffer_count_arg = cc.get_next_arg()    # DWORD dwBufferCount
+        bytes_recvd_arg = cc.get_next_arg()     # LPDWORD lpNumberOfBytesRecvd
+        flags_arg = cc.get_next_arg()           # LPDWORD lpFlags
+        overlapped_arg = cc.get_next_arg()      # LPWSAOVERLAPPED lpOverlapped
+        completion_arg = cc.get_next_arg()      # LPWSAOVERLAPPED_COMPLETION_ROUTINE
+
+        # Get parameter values
+        socket_vals = Utils.get_values_from_cc_arg(socket_arg, state, arch)
+        buffer_ptrs = Utils.get_values_from_cc_arg(buffers_arg, state, arch)
+
+        # Track socket parent if available
+        parent = None
+        parent_fds = []
+        for val in Utils.get_values_from_multivalues(socket_vals):
+            if val.concrete and val.concrete_value in self.fd_tracker:
+                parent_fds.append(val.concrete_value)
+                if parent is None:
+                    parent = self.fd_tracker[val.concrete_value]["val"]
+                else:
+                    parent = parent.concat(self.fd_tracker[val.concrete_value]["val"])
+
+        # Initialize fd_tracker
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        # Process WSABUF structures (simplified - treat as single buffer)
+        for ptr in Utils.get_values_from_multivalues(buffer_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is None:
+                continue
+
+            # Use default size for WSA buffer
+            memloc = MemoryLocation(sp_offset, self.MAX_READ_SIZE, endness=Endness.BE)
+
+            # Create parent name for taint tracking
+            if parent is not None:
+                parent_name = next(iter(x for x in parent.variables if x != "TOP"))
+            else:
+                parent_name = "wsa_network"
+
+            # Create tainted network data
+            buf_bvs = claripy.BVS(
+                f"{stored_func.name}({parent_name})@0x{stored_func.code_loc.ins_addr:x}",
+                memloc.size * 8
+            )
+            buf_bvs.variables = frozenset(set(buf_bvs.variables) | {"TOP"})
+
+            # Track in fd_tracker
+            self.fd_tracker[stored_func.name].append({
+                "val": buf_bvs,
+                "parent": parent_fds,
+                "ins_addr": stored_func.code_loc.ins_addr
+            })
+
+            # Create memory dependency
+            mv = MultiValues(buf_bvs)
+            stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return success (0) or error code
+        return_val = claripy.BVV(0, 32)
+        return True, state, MultiValues(return_val)
+
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_WSARecvFrom(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Handle WSARecvFrom - Windows Asynchronous Socket Receive with Source Address
+        
+        .. sourcecode:: c
+            int WSARecvFrom(
+                SOCKET s,
+                LPWSABUF lpBuffers,
+                DWORD dwBufferCount,
+                LPDWORD lpNumberOfBytesRecvd,
+                LPDWORD lpFlags,
+                struct sockaddr *lpFrom,
+                LPINT lpFromlen,
+                LPWSAOVERLAPPED lpOverlapped,
+                LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+            );
+        """
+        self.log.debug("RDA: WSARecvFrom, ins_addr=%#x", stored_func.code_loc.ins_addr)
+
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("WSARecvFrom")
+
+        # Extract all 9 parameters
+        socket_arg = cc.get_next_arg()          # SOCKET s
+        buffers_arg = cc.get_next_arg()         # LPWSABUF lpBuffers
+        buffer_count_arg = cc.get_next_arg()    # DWORD dwBufferCount
+        bytes_recvd_arg = cc.get_next_arg()     # LPDWORD lpNumberOfBytesRecvd
+        flags_arg = cc.get_next_arg()           # LPDWORD lpFlags
+        from_addr_arg = cc.get_next_arg()       # struct sockaddr *lpFrom
+        from_len_arg = cc.get_next_arg()        # LPINT lpFromlen
+        overlapped_arg = cc.get_next_arg()      # LPWSAOVERLAPPED lpOverlapped
+        completion_arg = cc.get_next_arg()      # LPWSAOVERLAPPED_COMPLETION_ROUTINE
+
+        # Get parameter values
+        socket_vals = Utils.get_values_from_cc_arg(socket_arg, state, arch)
+        buffer_ptrs = Utils.get_values_from_cc_arg(buffers_arg, state, arch)
+        buffer_count_vals = Utils.get_values_from_cc_arg(buffer_count_arg, state, arch)
+
+        # Track socket parent if available
+        parent = None
+        parent_fds = []
+        for val in Utils.get_values_from_multivalues(socket_vals):
+            if val.concrete and val.concrete_value in self.fd_tracker:
+                parent_fds.append(val.concrete_value)
+                if parent is None:
+                    parent = self.fd_tracker[val.concrete_value]["val"]
+                else:
+                    parent = parent.concat(self.fd_tracker[val.concrete_value]["val"])
+
+        # Initialize fd_tracker
+        if stored_func.name not in self.fd_tracker:
+            self.fd_tracker[stored_func.name] = []
+
+        # Process WSABUF structures - handle multiple buffers
+        for ptr in Utils.get_values_from_multivalues(buffer_ptrs):
+            for count_val in Utils.get_values_from_multivalues(buffer_count_vals):
+                sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+                if sp_offset.offset is None:
+                    continue
+
+                # Determine buffer size based on buffer count
+                if count_val.concrete:
+                    # Multiple buffers - use larger size
+                    buffer_size = min(count_val.concrete_value * 1024, self.MAX_READ_SIZE)
+                    memloc = MemoryLocation(sp_offset, buffer_size, endness=Endness.BE)
+                else:
+                    # Unknown buffer count - use default
+                    memloc = MemoryLocation(sp_offset, self.MAX_READ_SIZE, endness=Endness.BE)
+
+                # Create parent name for taint tracking
+                if parent is not None:
+                    parent_name = next(iter(x for x in parent.variables if x != "TOP"))
+                else:
+                    parent_name = "wsa_udp_network"
+
+                # Create tainted network data with source address info
+                buf_bvs = claripy.BVS(
+                    f"{stored_func.name}({parent_name})@0x{stored_func.code_loc.ins_addr:x}",
+                    memloc.size * 8
+                )
+                buf_bvs.variables = frozenset(set(buf_bvs.variables) | {"TOP"})
+
+                # Track in fd_tracker with WSARecvFrom-specific metadata
+                self.fd_tracker[stored_func.name].append({
+                    "val": buf_bvs,
+                    "parent": parent_fds,
+                    "ins_addr": stored_func.code_loc.ins_addr,
+                    "operation": "wsa_recv_from",
+                    "has_source_addr": True
+                })
+
+                # Create memory dependency
+                mv = MultiValues(buf_bvs)
+                stored_func.depends(memloc, *stored_func.atoms, value=mv)
+
+        # Return success (0) or SOCKET_ERROR (-1)
+        return_val = claripy.BVV(0, 32)  # Success
+        return True, state, MultiValues(return_val)
+
+
 

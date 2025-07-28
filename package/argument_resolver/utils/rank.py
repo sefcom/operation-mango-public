@@ -13,7 +13,7 @@ categories = {
     "env": ["env", "getenv", "nvram", "frontend_param", "getvalue", "getenvironmentvariablea", "readprocessmemory", "getclipboarddata"],
     "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "readconsolea","getmodulefilenamea","findfirstfilea" ],
     "argv": ["argv", "getcommandlinea"],
-    "network": ["socket", "accept", "recv", "nflog_get_payload", "acceptex"],
+    "network": ["socket", "accept", "recv", "nflog_get_payload", "acceptex", "wsarecv", "wsarecvfrom"],
     "unknown": ["unknown"],
 }
 
