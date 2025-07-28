@@ -163,8 +163,6 @@ winreg_decls = {
         SimTypeInt(),                       # nSize
     ], SimTypeInt()),                       # Return: DWORD
 
-
-
     "ReadProcessMemory": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hProcess
         SimTypePointer(SimTypeBottom()),    # lpBaseAddress
@@ -172,9 +170,11 @@ winreg_decls = {
         SimTypeLong(signed=False),         # nSize
         SimTypePointer(SimTypeLong(signed=False)),     # lpNumberOfBytesRead
     ], SimTypeInt(signed=False)), 
+
     "GetClipboardData": SimTypeFunction([
         SimTypeInt(),                       # uFormat
     ], SimTypePointer(SimTypeBottom())),      # Returns HANDLE
+    
     "ShellExecuteA": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # hwnd
         SimTypePointer(SimTypeChar()),      # lpOperation
@@ -183,4 +183,11 @@ winreg_decls = {
         SimTypePointer(SimTypeChar()),      # lpDirectory
         SimTypeInt(),                       # nShowCmd
     ], SimTypePointer(SimTypeInt())),       #Return: HINSTANCE (casts to int ptr)
+
+    "InternetReadFile": SimTypeFunction([
+       SimTypeInt(),                     # HINTERNET hFile
+       SimTypePointer(SimTypeBottom()),  # LPVOID lpBuffer
+       SimTypeInt(),                     # DWORD dwNumberOfBytesToRead
+       SimTypePointer(SimTypeInt()),     # LPDWORD lpdwNumberOfBytesRead
+   ], SimTypeInt()),                     # Return: BOOL
 }
