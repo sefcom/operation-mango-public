@@ -133,7 +133,8 @@ winreg_decls = {
     ], SimTypeInt()),                       # Returns: BOOL
     
     "GetCurrentProcess": SimTypeFunction([
-    ], SimTypePointer(SimTypeBottom)),
+    ], SimTypePointer(SimTypeBottom())),
+    
     "AcceptEx": SimTypeFunction([
         SimTypeInt(),                       # SOCKET       sListenSocket
         SimTypeInt(),                       # SOCKET       sAcceptSocket
