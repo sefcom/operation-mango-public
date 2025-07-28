@@ -134,7 +134,10 @@ winreg_decls = {
     
     "GetCurrentProcess": SimTypeFunction([
     ], SimTypePointer(SimTypeBottom())),
+<<<<<<< HEAD
     
+=======
+>>>>>>> win32-RegQueryValue-source
     "AcceptEx": SimTypeFunction([
         SimTypeInt(),                       # SOCKET       sListenSocket
         SimTypeInt(),                       # SOCKET       sAcceptSocket
@@ -213,4 +216,12 @@ winreg_decls = {
         SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
     ], SimTypeInt()),                           # Return: int
 
+    "RegQueryValueExA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpReserved
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpType
+        SimTypePointer(SimTypeBottom()),    # LPBYTE lpData
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpcbData
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS (LONG)
 }

@@ -10,7 +10,7 @@ tag_values = {
 }
 
 categories = {
-    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue", "getenvironmentvariablea", "readprocessmemory", "getclipboarddata"],
+    "env": ["env", "getenv", "nvram", "frontend_param", "getvalue", "getenvironmentvariablea", "readprocessmemory", "getclipboarddata", "regqueryvalueexa"],
     "file": ["fopen", "read", "open", "fread", "fgets", "stdin", "readconsolea","getmodulefilenamea","findfirstfilea" ],
     "argv": ["argv", "getcommandlinea"],
     "network": ["socket", "accept", "recv", "nflog_get_payload", "acceptex", "wsarecv", "wsarecvfrom"],
