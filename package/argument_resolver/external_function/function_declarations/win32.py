@@ -134,10 +134,7 @@ winreg_decls = {
     
     "GetCurrentProcess": SimTypeFunction([
     ], SimTypePointer(SimTypeBottom())),
-<<<<<<< HEAD
     
-=======
->>>>>>> win32-RegQueryValue-source
     "AcceptEx": SimTypeFunction([
         SimTypeInt(),                       # SOCKET       sListenSocket
         SimTypeInt(),                       # SOCKET       sAcceptSocket
