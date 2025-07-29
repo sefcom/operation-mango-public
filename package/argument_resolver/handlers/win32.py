@@ -14,60 +14,60 @@ from archinfo import Endness
 import claripy
 
 class WinHandlers(HandlerBase):
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Deletes a subkey and its values from the registry.
-    #     C++
-    #         LSTATUS RegDeleteKeyA(
-    #             HKEY   hKey,
-    #             LPCSTR lpSubKey
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyA, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyA")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     # Mark lpSubKey as sink dependency
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))  # ERROR_SUCCESS
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Deletes a subkey and its values from the registry.
+        C++
+            LSTATUS RegDeleteKeyA(
+                HKEY   hKey,
+                LPCSTR lpSubKey
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyA")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        # Mark lpSubKey as sink dependency
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))  # ERROR_SUCCESS
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Deletes a subkey and its values from the registry (Unicode).
-    #     C++
-    #         LSTATUS RegDeleteKeyW(
-    #             HKEY    hKey,
-    #             LPCWSTR lpSubKey
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyW, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyW")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Deletes a subkey and its values from the registry (Unicode).
+        C++
+            LSTATUS RegDeleteKeyW(
+                HKEY    hKey,
+                LPCWSTR lpSubKey
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyW, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyW")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
 
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
@@ -100,167 +100,167 @@ class WinHandlers(HandlerBase):
                 stored_func.depends(memloc, *stored_func.atoms)
         return True, state, MultiValues(claripy.BVV(0, 32))
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyExW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Deletes a subkey and its values from the registry, specifying access rights (Unicode).
-    #     C++
-    #         LSTATUS RegDeleteKeyExW(
-    #             HKEY    hKey,
-    #             LPCWSTR lpSubKey,
-    #             REGSAM  samDesired,
-    #             DWORD   Reserved
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyExW, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyExW")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     samDesired = cc.get_next_arg()
-    #     Reserved = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyExW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Deletes a subkey and its values from the registry, specifying access rights (Unicode).
+        C++
+            LSTATUS RegDeleteKeyExW(
+                HKEY    hKey,
+                LPCWSTR lpSubKey,
+                REGSAM  samDesired,
+                DWORD   Reserved
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyExW, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyExW")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        samDesired = cc.get_next_arg()
+        Reserved = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyTransactedA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Deletes a subkey and its values from the registry as a transacted operation (ANSI).
-    #     C++
-    #         LSTATUS RegDeleteKeyTransactedA(
-    #             HKEY   hKey,
-    #             LPCSTR lpSubKey,
-    #             REGSAM samDesired,
-    #             DWORD  Reserved,
-    #             HANDLE hTransaction,
-    #             PVOID  pExtendedParameter
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyTransactedA, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyTransactedA")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     samDesired = cc.get_next_arg()
-    #     Reserved = cc.get_next_arg()
-    #     hTransaction = cc.get_next_arg()
-    #     pExtendedParameter = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyTransactedA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Deletes a subkey and its values from the registry as a transacted operation (ANSI).
+        C++
+            LSTATUS RegDeleteKeyTransactedA(
+                HKEY   hKey,
+                LPCSTR lpSubKey,
+                REGSAM samDesired,
+                DWORD  Reserved,
+                HANDLE hTransaction,
+                PVOID  pExtendedParameter
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyTransactedA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyTransactedA")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        samDesired = cc.get_next_arg()
+        Reserved = cc.get_next_arg()
+        hTransaction = cc.get_next_arg()
+        pExtendedParameter = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyTransactedW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Deletes a subkey and its values from the registry as a transacted operation (Unicode).
-    #     C++
-    #         LSTATUS RegDeleteKeyTransactedW(
-    #             HKEY    hKey,
-    #             LPCWSTR lpSubKey,
-    #             REGSAM  samDesired,
-    #             DWORD   Reserved,
-    #             HANDLE  hTransaction,
-    #             PVOID   pExtendedParameter
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyTransactedW, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyTransactedW")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     samDesired = cc.get_next_arg()
-    #     Reserved = cc.get_next_arg()
-    #     hTransaction = cc.get_next_arg()
-    #     pExtendedParameter = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyTransactedW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Deletes a subkey and its values from the registry as a transacted operation (Unicode).
+        C++
+            LSTATUS RegDeleteKeyTransactedW(
+                HKEY    hKey,
+                LPCWSTR lpSubKey,
+                REGSAM  samDesired,
+                DWORD   Reserved,
+                HANDLE  hTransaction,
+                PVOID   pExtendedParameter
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyTransactedW, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyTransactedW")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        samDesired = cc.get_next_arg()
+        Reserved = cc.get_next_arg()
+        hTransaction = cc.get_next_arg()
+        pExtendedParameter = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyValueA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Removes the specified value from the specified registry key and subkey (ANSI).
-    #     C++
-    #         LSTATUS RegDeleteKeyValueA(
-    #             HKEY   hKey,
-    #             LPCSTR lpSubKey,
-    #             LPCSTR lpValueName
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyValueA, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyValueA")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     lpValueName = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     lpValueName_ptrs = Utils.get_values_from_cc_arg(lpValueName, state, arch)
-    #     # Mark lpSubKey and lpValueName as sink dependencies
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs) + Utils.get_values_from_multivalues(lpValueName_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyValueA(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Removes the specified value from the specified registry key and subkey (ANSI).
+        C++
+            LSTATUS RegDeleteKeyValueA(
+                HKEY   hKey,
+                LPCSTR lpSubKey,
+                LPCSTR lpValueName
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyValueA, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyValueA")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        lpValueName = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        lpValueName_ptrs = Utils.get_values_from_cc_arg(lpValueName, state, arch)
+        # Mark lpSubKey and lpValueName as sink dependencies
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs) + Utils.get_values_from_multivalues(lpValueName_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
 
-    # @HandlerBase.returns
-    # @HandlerBase.tag_parameter_definitions
-    # def handle_RegDeleteKeyValueW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
-    #     """
-    #     Removes the specified value from the specified registry key and subkey (Unicode).
-    #     C++
-    #         LSTATUS RegDeleteKeyValueW(
-    #             HKEY    hKey,
-    #             LPCWSTR lpSubKey,
-    #             LPCWSTR lpValueName
-    #         );
-    #     :param stored_func:
-    #     :param state: Register and memory definitions and uses
-    #     """
-    #     self.log.debug("RDA: RegDeleteKeyValueW, ins_addr=%#x", stored_func.code_loc.ins_addr)
-    #     arch = state.arch
-    #     cc = self._calling_convention_resolver.get_cc("RegDeleteKeyValueW")
-    #     hKey = cc.get_next_arg()
-    #     lpSubKey = cc.get_next_arg()
-    #     lpValueName = cc.get_next_arg()
-    #     hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
-    #     lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
-    #     lpValueName_ptrs = Utils.get_values_from_cc_arg(lpValueName, state, arch)
-    #     for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs) + Utils.get_values_from_multivalues(lpValueName_ptrs):
-    #         sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
-    #         if sp_offset.offset is not None:
-    #             memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
-    #             stored_func.depends(memloc, *stored_func.atoms)
-    #     return True, state, MultiValues(claripy.BVV(0, 32))
+    @HandlerBase.returns
+    @HandlerBase.tag_parameter_definitions
+    def handle_RegDeleteKeyValueW(self, state: ReachingDefinitionsState, stored_func: StoredFunction):
+        """
+        Removes the specified value from the specified registry key and subkey (Unicode).
+        C++
+            LSTATUS RegDeleteKeyValueW(
+                HKEY    hKey,
+                LPCWSTR lpSubKey,
+                LPCWSTR lpValueName
+            );
+        :param stored_func:
+        :param state: Register and memory definitions and uses
+        """
+        self.log.debug("RDA: RegDeleteKeyValueW, ins_addr=%#x", stored_func.code_loc.ins_addr)
+        arch = state.arch
+        cc = self._calling_convention_resolver.get_cc("RegDeleteKeyValueW")
+        hKey = cc.get_next_arg()
+        lpSubKey = cc.get_next_arg()
+        lpValueName = cc.get_next_arg()
+        hKey_ptrs = Utils.get_values_from_cc_arg(hKey, state, arch)
+        lpSubKey_ptrs = Utils.get_values_from_cc_arg(lpSubKey, state, arch)
+        lpValueName_ptrs = Utils.get_values_from_cc_arg(lpValueName, state, arch)
+        for ptr in Utils.get_values_from_multivalues(lpSubKey_ptrs) + Utils.get_values_from_multivalues(lpValueName_ptrs):
+            sp_offset = SpOffset(arch.bits, state.get_stack_offset(ptr))
+            if sp_offset.offset is not None:
+                memloc = MemoryLocation(sp_offset, 256, endness=Endness.BE)
+                stored_func.depends(memloc, *stored_func.atoms)
+        return True, state, MultiValues(claripy.BVV(0, 32))
     
     @HandlerBase.returns
     @HandlerBase.tag_parameter_definitions
