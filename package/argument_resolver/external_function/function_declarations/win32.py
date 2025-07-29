@@ -185,11 +185,11 @@ winreg_decls = {
     ], SimTypePointer(SimTypeInt())),       #Return: HINSTANCE (casts to int ptr)
 
     "InternetReadFile": SimTypeFunction([
-       SimTypeInt(),                     # HINTERNET hFile
-       SimTypePointer(SimTypeBottom()),  # LPVOID lpBuffer
-       SimTypeInt(),                     # DWORD dwNumberOfBytesToRead
-       SimTypePointer(SimTypeInt()),     # LPDWORD lpdwNumberOfBytesRead
-   ], SimTypeInt()),                     # Return: BOOL
+        SimTypeInt(),                     # HINTERNET hFile
+        SimTypePointer(SimTypeBottom()),  # LPVOID lpBuffer
+        SimTypeInt(),                     # DWORD dwNumberOfBytesToRead
+        SimTypePointer(SimTypeInt()),     # LPDWORD lpdwNumberOfBytesRead
+    ], SimTypeInt()),                     # Return: BOOL
     
     "WSARecv": SimTypeFunction([
         SimTypeInt(),                           # SOCKET s
@@ -221,58 +221,34 @@ winreg_decls = {
         SimTypePointer(SimTypeBottom()),    # LPBYTE lpData
         SimTypePointer(SimTypeInt()),       # LPDWORD lpcbData
     ], SimTypeLong(signed=True)),           # Return: LSTATUS (LONG)
-    # Registry deletion functions (ANSI and Unicode)
-    "RegDeleteKeyA": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+    # RegDeleteKeyA
+    # "RegDeleteKeyA": SimTypeFunction([
+    #     SimTypePointer(SimTypeBottom()),    # HKEY hKey
+    #     SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+    # ], SimTypeInt()),                      # Return: LSTATUS (DWORD)
 
-    "RegDeleteKeyW": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
-
+    # RegDeleteKeyExA
     "RegDeleteKeyExA": SimTypeFunction([
         SimTypePointer(SimTypeBottom()),    # HKEY hKey
         SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
         SimTypeInt(),                       # REGSAM samDesired
-        SimTypeLong(signed=True),           # DWORD Reserved
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+        SimTypeInt(),                       # DWORD Reserved
+    ], SimTypeInt()),                      # Return: LSTATUS (DWORD)
 
-    "RegDeleteKeyExW": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
-        SimTypeInt(),                       # REGSAM samDesired
-        SimTypeLong(signed=True),           # DWORD Reserved
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+#     # RegDeleteKeyTransactedA
+#     "RegDeleteKeyTransactedA": SimTypeFunction([
+#         SimTypePointer(SimTypeBottom()),    # HKEY hKey
+#         SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+#         SimTypeInt(),                       # REGSAM samDesired
+#         SimTypeInt(),                       # DWORD Reserved
+#         SimTypePointer(SimTypeBottom()),    # HANDLE hTransaction
+#         SimTypePointer(SimTypeBottom()),    # PVOID pExtendedParameter
+#     ], SimTypeInt()),                      # Return: LSTATUS (DWORD)
 
-    "RegDeleteKeyTransactedA": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
-        SimTypeInt(),                       # REGSAM samDesired
-        SimTypeLong(signed=True),           # DWORD Reserved
-        SimTypePointer(SimTypeBottom()),    # HANDLE hTransaction
-        SimTypePointer(SimTypeBottom()),    # PVOID pExtendedParameter
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
-
-    "RegDeleteKeyTransactedW": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
-        SimTypeInt(),                       # REGSAM samDesired
-        SimTypeLong(signed=True),           # DWORD Reserved
-        SimTypePointer(SimTypeBottom()),    # HANDLE hTransaction
-        SimTypePointer(SimTypeBottom()),    # PVOID pExtendedParameter
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
-
-    "RegDeleteKeyValueA": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
-        SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
-
-    "RegDeleteKeyValueW": SimTypeFunction([
-        SimTypePointer(SimTypeBottom()),    # HKEY hKey
-        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
-        SimTypePointer(SimTypeChar()),      # LPCWSTR lpValueName
-    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+#     # RegDeleteKeyValueA
+#     "RegDeleteKeyValueA": SimTypeFunction([
+#         SimTypePointer(SimTypeBottom()),    # HKEY hKey
+#         SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+#         SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
+#     ], SimTypeInt()),                      # Return: LSTATUS (DWORD)
 }

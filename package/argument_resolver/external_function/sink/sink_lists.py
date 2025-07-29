@@ -48,16 +48,14 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
 
 # Registry deletion sinks (all variants, parameter 2 is lpSubKey, parameter 3 is lpValueName for KeyValue)
 ]
-COMMAND_INJECTION_SINKS.extend([
-    Sink(name="RegDeleteKeyA", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyW", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyExA", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyExW", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyTransactedA", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyTransactedW", vulnerable_parameters=[2]),
-    Sink(name="RegDeleteKeyValueA", vulnerable_parameters=[2, 3]),
-    Sink(name="RegDeleteKeyValueW", vulnerable_parameters=[2, 3]),
-])
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyA", vulnerable_parameters=[2]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyW", vulnerable_parameters=[2]))
+COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyExA", vulnerable_parameters=[2]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyExW", vulnerable_parameters=[2]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyTransactedA", vulnerable_parameters=[2]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyTransactedW", vulnerable_parameters=[2]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyValueA", vulnerable_parameters=[2, 3]))
+#COMMAND_INJECTION_SINKS.append(Sink(name="RegDeleteKeyValueW", vulnerable_parameters=[2, 3]))
 
 PATH_TRAVERSAL_SINKS: List[Sink] = [
     Sink(name="popen", vulnerable_parameters=[1]),
