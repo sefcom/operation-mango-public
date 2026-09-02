@@ -5,6 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "argument_resolver"
 version = "0.0.1"
+license = "BSD-2-Clause"
+license-files = ["LICENSE"]
 authors = [
         {name = "Wil Gibbs", email = "wfgibbs@asu.edu"}, 
         {name = "Pamplemousse", email = "private@example.com"},
