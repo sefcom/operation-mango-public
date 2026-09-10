@@ -166,10 +166,15 @@ def _get_strings_from_pointer(pointer, state, load_func):
         new_mv.add_value(0, state.top(state.arch.bits))
         return new_mv
     try:
-        mv = load_func(pointer, 1)
+        mv = load_func(pointer, 2)
     except SimMemoryMissingError:
         return MultiValues(state.top(state.arch.bits))
-
+    
+    try:
+        mv = load_func(pointer, 2)
+    except SimMemoryMissingError:
+        pass
+    
     for bvv in mv[0]:
         defns = list(state.extract_defs(bvv))
         if len(defns) == 0:
@@ -770,10 +775,27 @@ class Utils:
             return []
         return arguments
 
+    # @staticmethod
+    # def get_atoms_from_function(function: Function, registers: list):
+    #     function_arguments = Utils.arguments_from_function(function)
+    #     atoms = [Atom.from_argument(x, registers) for x in function_arguments]
+    #     return atoms
+    
     @staticmethod
-    def get_atoms_from_function(function: Function, registers: list):
+    def get_atoms_from_function(function: Function, arch: Arch, state: ReachingDefinitionsState=None):
         function_arguments = Utils.arguments_from_function(function)
-        atoms = [Atom.from_argument(x, registers) for x in function_arguments]
+        try:
+            sp = state.get_sp()
+        except:
+            Utils.log.warning("Failed to get sp from state for function %s", function.name)
+            sp = None
+        atoms = []
+        for i, arg in enumerate(function_arguments):
+            try:
+                atoms.append(Atom.from_argument(arg, arch, sp=sp))
+            except:
+                Utils.log.warning("Failed to resolve atom for arg %s in function %s", i, function.name)
+                atoms.append(None)
         return atoms
 
     @staticmethod
