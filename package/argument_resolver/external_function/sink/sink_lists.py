@@ -67,8 +67,8 @@ MEMCPY_SINKS: List[Sink] = [
 ]
 
 STRING_FORMAT_SINKS: List[Sink] = [
-    Sink(name="sprintf", vulnerable_parameters=[2]),
-    Sink(name="snprintf", vulnerable_parameters=[3]),
+    Sink(name="sprintf", vulnerable_parameters=[1]),
+    Sink(name="snprintf", vulnerable_parameters=[1]),
 ]
 
 GETTER_SINKS: List[Sink] = [
