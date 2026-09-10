@@ -9,7 +9,7 @@ from angr.calling_conventions import (
     DEFAULT_CC,
     SimCC,
 )
-from angr.sim_type import SimTypePointer, SimTypeChar
+from angr.sim_type import SimTypePointer, SimTypeChar, SimTypeBottom
 
 from angr.engines.light import SpOffset
 from angr.knowledge_plugins.key_definitions.atoms import MemoryLocation, Register
@@ -66,7 +66,7 @@ def get_default_cc_with_args(num_args: int, arch: Arch, is_win=False) -> SimCC:
         )
     )
     cc = SimCC.find_cc(arch, reg_args + stack_args, default_cc.STACKARG_SP_DIFF)
-    if cc is None:
+    if cc is None or is_win:
         cc = default_cc(arch)
     return cc
 
@@ -162,11 +162,24 @@ class CallingConventionResolver:
         cc, proto = None, None
 
         if function_name in LIBRARY_DECLS:
+            # number_of_parameters = len(LIBRARY_DECLS[function_name].args)
+            # cc = get_default_cc_with_args(
+            #     number_of_parameters,
+            #     self._arch,
+            #     is_win=len(self._project.loader.all_pe_objects) > 0,
+            # )
             number_of_parameters = len(LIBRARY_DECLS[function_name].args)
+            if hasattr(self._project, "simos") and "win" in self._project.simos.name.lower():
+                is_win = True
+            elif len(self._project.loader.all_pe_objects) > 0:
+                is_win = True
+            else:
+                is_win = False
+                
             cc = get_default_cc_with_args(
                 number_of_parameters,
                 self._arch,
-                is_win=len(self._project.loader.all_pe_objects) > 0,
+                is_win = is_win
             )
             cc.sim_func = LIBRARY_DECLS[function_name]
 
@@ -210,7 +223,10 @@ class CallingConventionResolver:
                 self._prototypes[function_name],
             ) = self._get_cc_and_proto(function_name)
         if self._cc[function_name] is not None:
-            self._cc[function_name].session = self._cc[function_name].arg_session(None)
+            if "Microsoft" in self._cc[function_name].__class__.__name__:
+                self._cc[function_name].session = self._cc[function_name].arg_session(SimTypeBottom())
+            else:
+                self._cc[function_name].session = self._cc[function_name].arg_session(None)
             self._cc[function_name].arg_counter = 0
         return self._cc[function_name]
 

@@ -42,6 +42,11 @@ COMMAND_INJECTION_SINKS: List[Sink] = [
     Sink(name="SLIBCExecv", vulnerable_parameters=[1]),
     Sink(name="SLIBCPopen", vulnerable_parameters=[1]),
     Sink(name="pegaSystem", vulnerable_parameters=[1]),
+    Sink(name="CreateProcessA", vulnerable_parameters=[2]), #[1,2]  # lpApplicationName, lpCommandLine
+    Sink(name="CreateFileA", vulnerable_parameters=[1]), # [1] lpFileName
+    Sink(name="InternetWriteFile", vulnerable_parameters=[2]),
+
+# Registry deletion sinks (all variants, parameter 2 is lpSubKey, parameter 3 is lpValueName for KeyValue)
 ]
 
 PATH_TRAVERSAL_SINKS: List[Sink] = [
@@ -100,4 +105,23 @@ SETTER_SINKS: List[Sink] = [
     Sink(name="PTI_nvram_set", vulnerable_parameters=[2]),
 ]
 
+SETTER_SINKS.append(Sink(name="SetEnvironmentVariableA", vulnerable_parameters=[1, 2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyA", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyW", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyExA", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyExW", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyTransactedA", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyTransactedW", vulnerable_parameters=[2]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyValueA", vulnerable_parameters=[2, 3]))
+SETTER_SINKS.append(Sink(name="RegDeleteKeyValueW", vulnerable_parameters=[2, 3]))
+
 ENV_SINKS: List[Sink] = GETTER_SINKS + SETTER_SINKS
+
+#WIN32_PROCESS_SINKS: List[Sink] = [
+    # Sink(name="CreateProcessW", vulnerable_parameters=[1, 2]),
+    # Sink(name="WinExec", vulnerable_parameters=[1]),
+    # Sink(name="ShellExecuteA", vulnerable_parameters=[3, 4]),  # lpFile, lpParameters
+#]
+
+COMMAND_INJECTION_SINKS.append(Sink(name="ShellExecuteA", vulnerable_parameters=[3]))
+

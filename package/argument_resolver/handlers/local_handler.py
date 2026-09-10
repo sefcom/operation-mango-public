@@ -20,6 +20,7 @@ from .stdio import StdioHandlers
 from .stdlib import StdlibHandlers
 from .string import StringHandlers
 from .unistd import UnistdHandlers
+from .win32_api import Win32ApiHandlers
 
 from ..utils.rda import CustomRDA
 from ..utils.call_trace_visitor import CallTraceSubject
@@ -33,6 +34,7 @@ LibraryHandler = Union[
     StdlibHandlers,
     StringHandlers,
     UnistdHandlers,
+    Win32ApiHandlers
 ]
 
 

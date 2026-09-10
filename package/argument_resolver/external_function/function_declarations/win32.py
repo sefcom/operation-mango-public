@@ -1,6 +1,9 @@
-from angr.sim_type import SimTypeFunction, SimTypeLong
+from angr.sim_type import SimTypeFunction, SimTypeLong, SimTypePointer, SimTypeInt, SimTypeBottom, SimTypeChar, SimTypeRef, SimStruct
+
+from angr.procedures.definitions.win32_kernel32 import prototypes
 
 
+# Create our own declaration dicts for each teams areas 
 winreg_decls = {
     #
     # Taken from: https://github.com/firmadyne/libnvram/blob/v1.0c/nvram.c .
@@ -13,9 +16,264 @@ winreg_decls = {
             SimTypeLong(signed=True),
             SimTypeLong(signed=True),
         ],
-        SimTypeLong(signed=True),
+        SimTypeInt(),  # Fix: Use SimTypeInt() for DWORD return type, not SimTypeLong
     ),
     "RegCloseKey": SimTypeFunction(
         [SimTypeLong(signed=True)], SimTypeLong(signed=True)
     ),
+
+    "ReadConsoleA": SimTypeFunction(
+    [
+        SimTypeLong(signed=True),
+        SimTypePointer(SimTypeChar(), offset=0),
+        SimTypeInt(signed=False),
+        SimTypePointer(SimTypeInt(), offset=0),
+        SimTypeLong(signed=True),
+    ], SimTypeLong(signed=True)),
+    
+    "CreateProcessA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpApplicationName
+        SimTypePointer(SimTypeChar()),      # lpCommandLine
+        SimTypePointer(SimTypeBottom()),    # lpProcessAttributes
+        SimTypePointer(SimTypeBottom()),    # lpThreadAttributes
+        SimTypeInt(),                       # bInheritHandles
+        SimTypeInt(),                       # dwCreationFlags
+        SimTypePointer(SimTypeBottom()),    # lpEnvironment
+        SimTypePointer(SimTypeChar()),      # lpCurrentDirectory
+        SimTypePointer(SimTypeBottom()),    # lpStartupInfo
+        SimTypePointer(SimTypeBottom()),    # lpProcessInformation
+    ], SimTypeInt()),
+
+    "CreateFileA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpFileName
+        SimTypeInt(),                       # dwDesiredAccess
+        SimTypeInt(),                       # dwShareMode
+        SimTypePointer(SimTypeBottom()),    # lpSecurityAttributes
+        SimTypeInt(),                       # dwCreationDisposition
+        SimTypeInt(),                       # dwFlagsAndAttributes
+        SimTypePointer(SimTypeBottom()),    # hTemplateFile
+    ], SimTypePointer(SimTypeBottom())),   # Returns HANDLE
+
+    "GetCommandLineA": SimTypeFunction([], SimTypePointer(SimTypeChar())),
+    
+    # Example: GetEnvironmentVariableA from MSDN
+    "GetEnvironmentVariableA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpName
+        SimTypePointer(SimTypeChar()),      # lpBuffer  
+        SimTypeInt(),                       # nSize
+    ], SimTypeInt()),                       # Return: DWORD
+    
+    "GetStdHandle": SimTypeFunction([
+        SimTypeInt(),                      # nStdHandle (DWORD)
+    ], SimTypePointer(SimTypeBottom())),# Returns HANDLE
+    
+    "SetEnvironmentVariableA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpName
+        SimTypePointer(SimTypeChar()),      # lpValue
+    ], SimTypeInt()),                       # Return: BOOL (as int)
+
+    "CloseHandle": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hObject (HANDLE)
+    ], SimTypeInt()),                       # Returns BOOL
+    "GlobalAlloc": SimTypeFunction([
+        SimTypeInt(signed=False),           # uFlags - allocation flags
+        SimTypeLong(signed=False),          # dwBytes - size in bytes
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HGLOBAL (memory handle)
+
+    "GlobalFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hMem - memory handle to free
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HGLOBAL (NULL on success)
+    "HeapAlloc": SimTypeFunction([
+    SimTypePointer(SimTypeBottom()),       # hHeap (HANDLE)
+    SimTypeInt(),                          # dwFlags (DWORD)
+    SimTypeLong(signed=False),             # dwBytes (SIZE_T)
+    ], SimTypePointer(SimTypeBottom())),   # Returns LPVOID
+
+    
+    "HeapFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hHeap (HANDLE)
+        SimTypeInt(),                       # dwFlags (DWORD)
+        SimTypePointer(SimTypeBottom()),    # lpMem (LPVOID)
+    ], SimTypeInt()),                       # Returns BOOL
+    "LocalAlloc": SimTypeFunction([
+        SimTypeInt(signed=False),           # uFlags - allocation flags
+        SimTypeLong(signed=False),          # uBytes - size in bytes
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HLOCAL (local memory handle)
+
+    "LocalFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hMem - local memory handle to free
+    ], SimTypePointer(SimTypeBottom())),   # Returns: HLOCAL (NULL on success)
+    "lstrcatA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpString1 (destination)
+        SimTypePointer(SimTypeChar()),      # lpString2 (source to append)
+    ], SimTypePointer(SimTypeChar())),      # Returns lpString1
+    
+    "lstrcpyA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpString1 (destination)
+        SimTypePointer(SimTypeChar()),      # lpString2 (source)
+    ], SimTypePointer(SimTypeChar())),      # Returns lpString1
+    
+    
+    "lstrlenA": SimTypeFunction([
+        SimTypePointer(SimTypeChar()),      # lpString
+    ], SimTypeInt()),                       # Returns int (string length)
+
+
+    "VirtualAlloc": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # lpAddress - starting address
+        SimTypeLong(signed=False),          # dwSize - size of allocation
+        SimTypeInt(signed=False),           # flAllocationType - allocation type
+        SimTypeInt(signed=False),           # flProtect - protection flags
+    ], SimTypePointer(SimTypeBottom())),   # Returns: LPVOID (allocated memory pointer)
+    
+    "VirtualFree": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # lpAddress - address to free
+        SimTypeLong(signed=False),          # dwSize - size to free
+        SimTypeInt(signed=False),           # dwFreeType - free type flags
+    ], SimTypeInt()),                       # Returns: BOOL
+    
+    "GetCurrentProcess": SimTypeFunction([
+    ], SimTypePointer(SimTypeBottom())),
+    
+    "AcceptEx": SimTypeFunction([
+        SimTypeInt(),                       # SOCKET       sListenSocket
+        SimTypeInt(),                       # SOCKET       sAcceptSocket
+        SimTypePointer(SimTypeBottom()),    # PVOID        lpOutputBuffer
+        SimTypeInt(),                       # DWORD        dwReceiveDataLength
+        SimTypeInt(),                       # DWORD        dwLocalAddressLength
+        SimTypeInt(),                       # DWORD        dwRemoteAddressLength
+        SimTypePointer(SimTypeInt()),       # LPDWORD      lpdwBytesReceived
+        SimTypePointer(SimTypeBottom()),    # LPOVERLAPPED lpOverlapped
+    ], SimTypeInt()),                       # Return: BOOL
+
+    "InternetWriteFile": SimTypeFunction([
+        SimTypeInt(),                     # HINTERNET hFile
+        SimTypePointer(SimTypeBottom()),  # LPCVOID   lpBuffer
+        SimTypeInt(),                     # DWORD     dwNumberOfBytesToWrite
+        SimTypePointer(SimTypeInt()),     # LPDWORD   lpdwNumberOfBytesWritten
+    ], SimTypeInt()),                     # Return: BOOL
+    "FindFirstFileA": SimTypeFunction([
+        SimTypePointer(SimTypeChar(), label="LPCSTR"),           # lpFileName
+        SimTypePointer(SimTypeBottom(), label="LPWIN32_FIND_DATAA"),  # lpFindFileData
+    ], SimTypePointer(SimTypeBottom(), label="HANDLE")),          # Return
+
+    "GetModuleFileNameA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hModule
+        SimTypePointer(SimTypeChar()),      # lpFilename
+        SimTypeInt(),                       # nSize
+    ], SimTypeInt()),                       # Return: DWORD
+
+    "ReadProcessMemory": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hProcess
+        SimTypePointer(SimTypeBottom()),    # lpBaseAddress
+        SimTypePointer(SimTypeBottom()),    # lpBuffer
+        SimTypeLong(signed=False),         # nSize
+        SimTypePointer(SimTypeLong(signed=False)),     # lpNumberOfBytesRead
+    ], SimTypeInt(signed=False)), 
+
+    "GetClipboardData": SimTypeFunction([
+        SimTypeInt(),                       # uFormat
+    ], SimTypePointer(SimTypeBottom())),      # Returns HANDLE
+    
+    "ShellExecuteA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # hwnd
+        SimTypePointer(SimTypeChar()),      # lpOperation
+        SimTypePointer(SimTypeChar()),      # lpFile
+        SimTypePointer(SimTypeChar()),      # lpParameters
+        SimTypePointer(SimTypeChar()),      # lpDirectory
+        SimTypeInt(),                       # nShowCmd
+    ], SimTypePointer(SimTypeInt())),       #Return: HINSTANCE (casts to int ptr)
+
+    "InternetReadFile": SimTypeFunction([
+        SimTypeInt(),                     # HINTERNET hFile
+        SimTypePointer(SimTypeBottom()),  # LPVOID lpBuffer
+        SimTypeInt(),                     # DWORD dwNumberOfBytesToRead
+        SimTypePointer(SimTypeInt()),     # LPDWORD lpdwNumberOfBytesRead
+    ], SimTypeInt()),                     # Return: BOOL
+    
+    "WSARecv": SimTypeFunction([
+        SimTypeInt(),                           # SOCKET s
+        SimTypePointer(SimTypeBottom()),        # LPWSABUF lpBuffers
+        SimTypeInt(),                           # DWORD dwBufferCount
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpNumberOfBytesRecvd
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpFlags
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED lpOverlapped
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    ], SimTypeInt()),                           # Return: int
+
+    "WSARecvFrom": SimTypeFunction([
+        SimTypeInt(),                           # SOCKET s
+        SimTypePointer(SimTypeBottom()),        # LPWSABUF lpBuffers
+        SimTypeInt(),                           # DWORD dwBufferCount
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpNumberOfBytesRecvd
+        SimTypePointer(SimTypeInt()),           # LPDWORD lpFlags
+        SimTypePointer(SimTypeBottom()),        # struct sockaddr *lpFrom
+        SimTypePointer(SimTypeInt()),           # LPINT lpFromlen
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED lpOverlapped
+        SimTypePointer(SimTypeBottom()),        # LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+    ], SimTypeInt()),                           # Return: int
+
+    "RegQueryValueExA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpReserved
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpType
+        SimTypePointer(SimTypeBottom()),    # LPBYTE lpData
+        SimTypePointer(SimTypeInt()),       # LPDWORD lpcbData
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS (LONG)
+    # Registry deletion functions (ANSI and Unicode)
+    "RegDeleteKeyA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyW": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyExA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+        SimTypeInt(),                       # REGSAM samDesired
+        SimTypeLong(signed=True),           # DWORD Reserved
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyExW": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
+        SimTypeInt(),                       # REGSAM samDesired
+        SimTypeLong(signed=True),           # DWORD Reserved
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyTransactedA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+        SimTypeInt(),                       # REGSAM samDesired
+        SimTypeLong(signed=True),           # DWORD Reserved
+        SimTypePointer(SimTypeBottom()),    # HANDLE hTransaction
+        SimTypePointer(SimTypeBottom()),    # PVOID pExtendedParameter
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyTransactedW": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
+        SimTypeInt(),                       # REGSAM samDesired
+        SimTypeLong(signed=True),           # DWORD Reserved
+        SimTypePointer(SimTypeBottom()),    # HANDLE hTransaction
+        SimTypePointer(SimTypeBottom()),    # PVOID pExtendedParameter
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyValueA": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpSubKey
+        SimTypePointer(SimTypeChar()),      # LPCSTR lpValueName
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
+
+    "RegDeleteKeyValueW": SimTypeFunction([
+        SimTypePointer(SimTypeBottom()),    # HKEY hKey
+        SimTypePointer(SimTypeChar()),      # LPCWSTR lpSubKey
+        SimTypePointer(SimTypeChar()),      # LPCWSTR lpValueName
+    ], SimTypeLong(signed=True)),           # Return: LSTATUS
 }
+

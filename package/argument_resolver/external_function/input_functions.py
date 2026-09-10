@@ -10,7 +10,20 @@ INPUT_EXTERNAL_FUNCTIONS: Set[str] = {
     "recv",
     "recvfrom",
     "custom_param_parser",
+    "ReadConsoleA",
+    "GetCommandLineA",
 } | {x.name for x in VULN_TYPES["getter"]}
+
+INPUT_EXTERNAL_FUNCTIONS.add("GetEnvironmentVariableA")
+INPUT_EXTERNAL_FUNCTIONS.add("AcceptEx")
+INPUT_EXTERNAL_FUNCTIONS.add("FindFirstFileA")
+INPUT_EXTERNAL_FUNCTIONS.add("GetModuleFileNameA")
+INPUT_EXTERNAL_FUNCTIONS.add("ReadProcessMemory")
+INPUT_EXTERNAL_FUNCTIONS.add("GetClipboardData")
+INPUT_EXTERNAL_FUNCTIONS.add("InternetReadFile")
+INPUT_EXTERNAL_FUNCTIONS.add("WSARecv")
+INPUT_EXTERNAL_FUNCTIONS.add("WSARecvFrom")
+INPUT_EXTERNAL_FUNCTIONS.add("RegQueryValueExA")
 
 
 KEY_BEACONS = {
